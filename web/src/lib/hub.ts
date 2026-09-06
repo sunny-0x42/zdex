@@ -1,7 +1,7 @@
 import type { Caps, Gauge, Hub, Live, Network, Tab } from "../types";
 
-export const ALL_TABS: Tab[] = ["swap", "pools", "liq", "book", "create", "port", "stats"];
-export const NAV_TABS: Tab[] = ["swap", "pools", "liq", "book", "port", "stats"];
+export const ALL_TABS: Tab[] = ["swap", "pools", "liq", "book", "create", "port", "stats", "guide"];
+export const NAV_TABS: Tab[] = ["swap", "pools", "liq", "book", "port", "guide"];
 
 export const FUNC_SURFACE: Record<string, string> = {
   SwapExactIn: "swap",

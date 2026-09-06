@@ -4,7 +4,7 @@
 # AMM must land on-chain before the realm can typecheck (it imports the AMM path).
 param(
   [Parameter(Mandatory = $true)][string]$KeyName,
-  [ValidateSet("Amm", "Realm", "All")][string]$Stage = "All",
+  [ValidateSet("Amm", "Realm", "Incentives", "All")][string]$Stage = "All",
   [switch]$Broadcast
 )
 
@@ -38,14 +38,22 @@ $Realm = @{
   GasWanted = "100000000"
   GasFee    = "200000ugnot"
 }
+$Incentives = @{
+  Path      = "gno.land/r/$Addr/zdex/incentives/v1"
+  Dir       = (Join-Path $Pearl "incentives-v1")
+  GasWanted = "50000000"
+  GasFee    = "100000ugnot"
+}
 
 $Jobs = @()
 if ($Stage -eq "Amm" -or $Stage -eq "All") { $Jobs += $Amm }
 if ($Stage -eq "Realm") { $Jobs += $Realm }
-if ($Stage -eq "All" -and $Broadcast) { $Jobs += $Realm }
+if ($Stage -eq "Incentives") { $Jobs += $Incentives }
+if ($Stage -eq "All" -and $Broadcast) { $Jobs += $Realm; $Jobs += $Incentives }
 if ($Stage -eq "All" -and -not $Broadcast) {
   Write-Host "Simulate AMM only. Realm typecheck needs AMM on-chain first."
   Write-Host "After AMM broadcast:  .\deploy\pearl\addpkg.ps1 -KeyName $KeyName -Stage Realm"
+  Write-Host "After v2 broadcast:   .\deploy\pearl\addpkg.ps1 -KeyName $KeyName -Stage Incentives"
 }
 
 foreach ($j in $Jobs) {

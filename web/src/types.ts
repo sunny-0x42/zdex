@@ -1,4 +1,4 @@
-export type Tab = "swap" | "pools" | "liq" | "book" | "create" | "port" | "stats";
+export type Tab = "swap" | "pools" | "liq" | "book" | "create" | "port" | "stats" | "guide";
 
 export type ChainToken = {
   symbol: string;

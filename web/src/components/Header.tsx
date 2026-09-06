@@ -30,18 +30,19 @@ export default function Header() {
 
   return (
     <header className="top">
-      <div className="brand">
+      <button className="brand" type="button" onClick={() => setTab("swap")} aria-label="zdex">
         <div className="logo">z</div>
         <div className="brand-name">
           z<span>dex</span>
         </div>
-      </div>
+      </button>
       <nav className="nav desktop-nav">
         {TABS.map((name) => (
           <button
             key={name}
             className={`nav-btn${tab === name || (name === "pools" && tab === "create") ? " on" : ""}`}
             type="button"
+            aria-current={tab === name || (name === "pools" && tab === "create") ? "page" : undefined}
             onClick={() => setTab(name)}
           >
             {d.tab[name]}
@@ -49,13 +50,16 @@ export default function Header() {
         ))}
       </nav>
       <div className="header-right">
-        <select className="net-select" value={netId} onChange={(e) => setNetId(e.target.value)} title="Network">
-          {Object.values(NETWORKS).map((n) => (
-            <option key={n.id} value={n.id}>
-              {n.chainName}
-            </option>
-          ))}
-        </select>
+        <label className="net-field">
+          <span>{d.network}</span>
+          <select className="net-select" value={netId} onChange={(e) => setNetId(e.target.value)}>
+            {Object.values(NETWORKS).map((n) => (
+              <option key={n.id} value={n.id}>
+                {n.chainName}
+              </option>
+            ))}
+          </select>
+        </label>
         <div className="status-pill" title={age}>
           <span className={`dot ${dot}`} />
           <span className="mono">{live.realmHeight || live.height || "—"}</span>

@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { DEFAULT_NET, NETWORKS, PKG_PATH } from "../config.js";
 import { copy, type Dict } from "./i18n";
 import { api, mergeSparks, sleep } from "./lib/api";
-import { ALL_TABS, FUNC_SURFACE, readPkgOverride, tabsFor, writePkgOverride } from "./lib/hub";
+import { ALL_TABS, FUNC_SURFACE, NAV_TABS, readPkgOverride, tabsFor, writePkgOverride } from "./lib/hub";
 import { connectAdena, connectWatch, doContractCall, hasAdena, resolvePkgPath } from "./lib/wallets";
 import type { Account, Live, LiveState, Network, Pool, Tab, Toast, TxResult, Wallet } from "./types";
 
@@ -233,7 +233,12 @@ export function DexProvider({ children }: { children: ReactNode }) {
   }, [netId, pkgOverride, applyLive, refreshLive]);
 
   useEffect(() => {
-    if (!tabsFor(live.caps).includes(tab)) setTabState("swap");
+    if (!ALL_TABS.includes(tab)) {
+      setTabState("swap");
+      return;
+    }
+    const nav = tabsFor(live.caps);
+    if (NAV_TABS.includes(tab) && !nav.includes(tab)) setTabState("swap");
   }, [live.caps, tab]);
 
   useEffect(() => {

@@ -109,9 +109,9 @@
 
 ---
 
-## Tuần 3 — incentives sidecar (upgrade-per-module)
+## Tuần 3 — incentives sidecar + English UI Guide
 
-Routing: `docs/research/incentives-routing.md`. Quyết định **sidecar** `incentives/v1`, không copy v3.
+Routing sidecar: `docs/research/incentives-routing.md`. Quyết định **sidecar** `incentives/v1`, không copy v3. Item 10 = UI `web/` + Guide; không addpkg.
 
 ### 9. Incentivized pools = module realm mới
 
@@ -123,6 +123,25 @@ Routing: `docs/research/incentives-routing.md`. Quyết định **sidecar** `inc
 
 Review (không owner): `zdex-security` (không chặn swap v2; không confused-deputy). `zdex-devops` tree khi test xanh. `zdex-trust` copy không APY.
 
+### 10. English UI chuyên nghiệp + Guide
+
+| | |
+|---|---|
+| **Owner** | `zdex-product` |
+| **Outcome** | `web/` English: shell chuyên nghiệp, clean, đầy đủ (Trade, Pools, Liquidity, Orders, Portfolio, Overview, CreatePool). Trang **Guide** mới (Adena + `OriginSend`, `CreatePool` listing, LP no-stake, escrow book, points/epoch pot, fee 5/30/100 ~1/6 protocol). `Launch` ẩn (không tab, không form, không bước Guide; `?tab=launch` → `create`). Footer no-advice. `cd web; npm test` xanh. Netlify CI on push (`web/dist`) OK. |
+| **Human yes** | **Không** cho UI. Netlify CI on push được. **Không** addpkg, không broadcast, không tweet, không fund. |
+
+Routing:
+
+- `zdex-product` (owner) — `web/` only: visual shell + surface DEX đầy đủ + trang Guide (`?tab=guide`). English. Không realm, không `Render()` gnoweb.
+- `zdex-trust` (review, không owner) — Guide + footer + empty-state theo `docs/research/trust.md`. Cấm APY / airdrop / audited / Uniswap-equivalent / mainnet thiếu testnet. No-advice.
+- Launch hidden — không NAV tab, không form, không recipe `Launch` trên Guide. Redirect `?tab=launch` → `create` giữ. ABI realm không đụng.
+- `zdex-protocol` / `zdex-security` / `zdex-defi` — không owner item 10. Không sửa `r/zdex` / `r/zdex/v2`. Guide mô tả primitive đã freeze (`CreatePool`, `OriginSend`, escrow book) — không invent Uniswap v3.
+- `zdex-devops` — Netlify CI on push (`netlify.toml` → `web/dist`) OK. Không addpkg, không đổi deploy tree, không broadcast. Default net Pearl.
+- `zdex-growth` — không tweet. Copy Guide không rời `web/` trước trust review. Public tweet / domain mới = human yes riêng.
+
+Review (không owner): `zdex-trust` copy Guide trước khi coi là public surface.
+
 ---
 
 ## Thứ tự / phụ thuộc
@@ -130,7 +149,7 @@ Review (không owner): `zdex-security` (không chặn swap v2; không confused-d
 ```
 Tuần 1:  [1 protocol] [2 security] [3 defi] [4 product] [5 research]  ← song song
 Tuần 2:  [6 protocol Render] → [7 devops gate] → [8 addpkg]  ← 8 chặn human yes
-Tuần 3:  [9 protocol+defi+product sidecar]  ← song song với 1–7; Pearl addpkg + SetNextPkg chặn yes
+Tuần 3:  [9 protocol+defi+product sidecar] [10 product UI+Guide]  ← 10 không chặn 9; Netlify CI; không addpkg
 ```
 
 - 1 xong mới khóa copy `Render`/README (6 + phần trust trong 8).
@@ -138,6 +157,7 @@ Tuần 3:  [9 protocol+defi+product sidecar]  ← song song với 1–7; Pearl a
 - 4 chạy local `gno.land/r/zdex/v2`; Sapphire pkg chỉ đổi sau 8.
 - 5 không chặn ship; đọc trước khi viết claim công khai.
 - 9 không đụng `r/zdex/v2` swap/LP; không phụ thuộc 8 (Pearl v2 đã live). Không `SetModule("incentives")`.
+- 10 không đụng realm; Launch hidden; trust review copy Guide; Netlify CI ≠ addpkg.
 
 ## Gate trước khi hỏi deploy yes
 

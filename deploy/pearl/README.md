@@ -49,7 +49,11 @@ cd C:\Users\Hi\zdex
 .\deploy\pearl\addpkg.ps1 -KeyName deploykey -Stage Amm -Broadcast
 .\deploy\pearl\addpkg.ps1 -KeyName deploykey -Stage Realm
 .\deploy\pearl\addpkg.ps1 -KeyName deploykey -Stage Realm -Broadcast
+.\deploy\pearl\addpkg.ps1 -KeyName deploykey -Stage Incentives
+.\deploy\pearl\addpkg.ps1 -KeyName deploykey -Stage Incentives -Broadcast
 ```
+
+Do **not** `SetNextPkg` to the incentives sidecar. NextPkg is the DEX hub successor only.
 
 Equivalent commands (replace `KEYNAME`):
 

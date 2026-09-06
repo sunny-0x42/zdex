@@ -4,6 +4,7 @@ import { errText } from "../i18n";
 import { mulDiv, quoteInLocal, quoteLocal } from "../lib/amm";
 import { api } from "../lib/api";
 import { UGNOT, fmtGnot, fmtInt, parseUgnot, toUgnot } from "../lib/format";
+import Featured from "./Featured";
 import Spark from "./Spark";
 
 type Preflight = {
@@ -14,7 +15,7 @@ type Preflight = {
 };
 
 export default function Swap() {
-  const { live, pool, pools, setPoolId, wallet, walletAddr, busy, runTx, call, deadline, toast, d, netId } = useDex();
+  const { live, pool, pools, setPoolId, setTab, wallet, walletAddr, busy, runTx, call, deadline, toast, d, netId } = useDex();
   const [tokenIn, setTokenIn] = useState("ugnot");
   const [amountIn, setAmountIn] = useState("1");
   const [amountOut, setAmountOut] = useState("");
@@ -140,8 +141,25 @@ export default function Swap() {
     }
   }
 
+  if (!pools.length) {
+    return (
+      <div className="card empty-card">
+        <h2>{d.noPoolsYet}</h2>
+        <p className="muted">{d.emptyPoolsBody}</p>
+        <div className="empty-actions">
+          <button className="btn primary" type="button" onClick={() => setTab("create")}>
+            {d.createPool}
+          </button>
+          <button className="btn ghost" type="button" onClick={() => setTab("guide")}>
+            {d.readGuide}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <section className="grid">
+    <section className="grid swap-layout">
       <div className="card swap-card">
         <div className="card-head">
           <h2>{d.swap}</h2>
@@ -231,12 +249,14 @@ export default function Swap() {
           </div>
         </div>
         {Math.abs(diverge) > 0.01 ? <p className="hint">{d.diverge}</p> : null}
+        <p className="hint">{d.swapHint}</p>
         <button className="btn primary wide" type="button" disabled={!!busy || !pool} onClick={() => void openConfirm()}>
           {busy || d.swap}
         </button>
       </div>
 
       <div className="stack">
+        <Featured />
         <div className="card">
           <div className="card-head">
             <h2>{pool ? `${pool.symbol} / GNOT` : d.market}</h2>

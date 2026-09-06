@@ -5,9 +5,22 @@ import { isIncentivized } from "../lib/hub";
 import Spark from "./Spark";
 
 export default function Markets() {
-  const { pools, tradePool, addLp, d, live } = useDex();
+  const { pools, tradePool, addLp, setTab, d, live } = useDex();
   if (!pools.length) {
-    return <div className="empty">{d.noMarkets}</div>;
+    return (
+      <div className="card empty-card">
+        <h2>{d.noPoolsYet}</h2>
+        <p className="muted">{d.emptyPoolsBody}</p>
+        <div className="empty-actions">
+          <button className="btn primary" type="button" onClick={() => setTab("create")}>
+            {d.createPool}
+          </button>
+          <button className="btn ghost" type="button" onClick={() => setTab("guide")}>
+            {d.readGuide}
+          </button>
+        </div>
+      </div>
+    );
   }
   return (
     <section>

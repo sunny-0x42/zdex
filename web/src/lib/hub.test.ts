@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  ALL_TABS,
   incentivesEnabled,
   isIncentivized,
+  NAV_TABS,
   parseCapsList,
   parseGaugeList,
   parseGaugeSnapshot,
@@ -37,7 +39,18 @@ describe("hub", () => {
 
   it("hides book tab when cap is off", () => {
     const caps = parseCapsList("swap;lp;create;points;quote");
-    expect(tabsFor(caps)).toEqual(["swap", "pools", "liq", "port", "stats"]);
+    expect(tabsFor(caps)).toEqual(["swap", "pools", "liq", "port", "guide"]);
+  });
+
+  it("keeps guide in nav and create/stats as routes", () => {
+    expect(ALL_TABS).toContain("guide");
+    expect(ALL_TABS).toContain("create");
+    expect(ALL_TABS).toContain("stats");
+    expect(NAV_TABS).toEqual(["swap", "pools", "liq", "book", "port", "guide"]);
+    const tabs = tabsFor();
+    expect(tabs).toContain("guide");
+    expect(tabs).not.toContain("create");
+    expect(tabs).not.toContain("stats");
   });
 
   it("treats incentives cap as optional", () => {

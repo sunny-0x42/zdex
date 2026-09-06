@@ -1,7 +1,8 @@
 import BottomNav from "./components/BottomNav";
-import Featured from "./components/Featured";
+import Footer from "./components/Footer";
 import Header from "./components/Header";
 import CreatePool from "./components/CreatePool";
+import Guide from "./components/Guide";
 import Liquidity from "./components/Liquidity";
 import Markets from "./components/Markets";
 import Orders from "./components/Orders";
@@ -12,30 +13,24 @@ import Ticker from "./components/Ticker";
 import Toasts from "./components/Toasts";
 import { useDex } from "./context";
 
-const TITLES: Record<string, { title: string; sub: string }> = {
-  swap: { title: "Trade", sub: "Swap GNOT and listed tokens at the pool price." },
-  pools: { title: "Pools", sub: "Live markets, liquidity, and fee APR." },
-  liq: { title: "Liquidity", sub: "Pick an on-chain token or paste its key, then add GNOT." },
-  book: { title: "Orders", sub: "Escrow limit orders against the AMM." },
-  create: { title: "Create pool", sub: "List an existing GRC20 against GNOT." },
-  port: { title: "Portfolio", sub: "Balances, LP positions, and fee share." },
-  stats: { title: "Overview", sub: "Protocol totals from the live realm." },
-};
-
 export default function App() {
   const { tab, setTab, live, liveState, d, pkg, resetPkg, net } = useDex();
-  const head = TITLES[tab] || TITLES.swap;
+  const title = d.tab[tab] || d.tab.swap;
+  const sub = d.pageSub[tab] || d.pageSub.swap;
   const pkgOff = pkg && pkg !== net.pkg;
 
   return (
     <>
+      <a className="skip-link" href="#main">
+        {d.skipToMain}
+      </a>
       <Header />
       <Ticker />
-      <div className="wrap">
+      <div className="wrap" id="main">
         <div className="page-head">
           <div>
-            <h1>{head.title}</h1>
-            <p>{head.sub}</p>
+            <h1>{title}</h1>
+            <p>{sub}</p>
           </div>
           {tab === "pools" ? (
             <button className="btn primary" type="button" onClick={() => setTab("create")}>
@@ -59,7 +54,6 @@ export default function App() {
           </div>
         ) : null}
         {liveState === "connecting" && !live.pools?.length ? <div className="skeleton" /> : null}
-        {tab === "swap" && live.pools?.length ? <Featured /> : null}
         {tab === "swap" ? <Swap /> : null}
         {tab === "pools" ? <Markets /> : null}
         {tab === "liq" ? <Liquidity /> : null}
@@ -67,7 +61,9 @@ export default function App() {
         {tab === "create" ? <CreatePool /> : null}
         {tab === "port" ? <Portfolio /> : null}
         {tab === "stats" ? <Stats /> : null}
+        {tab === "guide" ? <Guide /> : null}
       </div>
+      <Footer />
       <BottomNav />
       <Toasts />
     </>

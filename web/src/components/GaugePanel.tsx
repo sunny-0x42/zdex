@@ -59,7 +59,16 @@ export default function GaugePanel({ pool }: { pool: Pool | null }) {
         >
           {d.claimIncentive} · {fmtGnot(claimN)} GNOT
         </button>
-      ) : null}
+      ) : (
+        <button
+          className="btn ghost wide"
+          type="button"
+          disabled={!!busy || !pool || !canSign}
+          onClick={() => void runTx("Sync", () => call("Sync", [pool!.id])).catch(() => {})}
+        >
+          {d.syncGauge}
+        </button>
+      )}
     </div>
   );
 }
