@@ -24,6 +24,7 @@ describe("copy", () => {
   });
   it("documents DEX facts without Launch or yield promises", () => {
     const g = Object.values(copy.guide).join(" ");
+    expect(g).toMatch(/Approve the DEX realm on the TOKEN package/);
     expect(g).toMatch(/Approve/);
     expect(g).toMatch(/Minimum 1 GNOT/);
     expect(g).toMatch(/Fund min 1 GNOT on the incentives package/);

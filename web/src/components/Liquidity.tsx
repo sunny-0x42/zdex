@@ -111,7 +111,7 @@ export default function Liquidity() {
 
   async function approve() {
     if (!resolved || resolved.internal) return;
-    const spender = realmAddr || live.viewAddr || "";
+    const spender = realmAddr;
     const pkgPath = tokenPkgFromKey(resolved.key);
     const amt = isNew ? toTokenBase(tokenAmt, resolved.decimals || 0).toString() : maxToken;
     if (!spender || !pkgPath) throw new Error(d.approveNeedPkg);
@@ -228,7 +228,7 @@ export default function Liquidity() {
             <button
               className="btn ghost wide"
               type="button"
-              disabled={!!busy || !(realmAddr || live.viewAddr) || !tokenPkgFromKey(resolved.key)}
+              disabled={!!busy || !realmAddr || !tokenPkgFromKey(resolved.key)}
               onClick={() => void approve().catch(() => {})}
             >
               {d.approveFirst}

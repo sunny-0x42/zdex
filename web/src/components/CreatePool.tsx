@@ -13,6 +13,7 @@ export default function CreatePool() {
   const [tokenAmt, setTokenAmt] = useState("1000");
   const [feeBps, setFeeBps] = useState("30");
   const [realmAddr, setRealmAddr] = useState("");
+  const [approved, setApproved] = useState(false);
 
   useEffect(() => {
     let on = true;
@@ -33,7 +34,13 @@ export default function CreatePool() {
   const tokenBase = toTokenBase(tokenAmt, decimals);
   const tokPkg = resolved ? tokenPkgFromKey(resolved.key) : "";
   const canSign = Boolean(account && account.source === "adena" && !previewing);
-  const ready = Boolean(resolved && u >= 1_000_000n && tokenBase > 0n && canSign && (resolved.internal || tokPkg));
+  const ready = Boolean(
+    resolved &&
+      u >= 1_000_000n &&
+      tokenBase > 0n &&
+      canSign &&
+      (resolved.internal || (tokPkg && realmAddr && approved)),
+  );
 
   async function lookup() {
     const ref = tokenKey.trim();
@@ -54,6 +61,7 @@ export default function CreatePool() {
         setLookupErr(d.poolExists);
         return;
       }
+      setApproved(false);
       setResolved({
         symbol: j.symbol,
         name: j.name || j.symbol,
@@ -75,6 +83,7 @@ export default function CreatePool() {
     const pkgPath = tokPkg;
     if (!spender || !pkgPath) throw new Error(d.approveNeedPkg);
     await runTx("Approve", () => call("Approve", [spender, tokenBase.toString()], "", pkgPath));
+    setApproved(true);
   }
 
   async function create() {
@@ -140,6 +149,7 @@ export default function CreatePool() {
           {d.minList} · {d.createThenFund}
         </p>
         {!canSign ? <p className="hint">{d.connectToSign}</p> : null}
+        {resolved && !resolved.internal && !approved ? <p className="hint">{d.approveThenCreate}</p> : null}
         {resolved && !resolved.internal ? (
           <button className="btn ghost wide" type="button" disabled={!!busy || !ready} onClick={() => void approve().catch(() => {})}>
             {d.approveFirst}
