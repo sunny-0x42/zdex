@@ -73,6 +73,20 @@ gnokey maketx addpkg ^
 Then the same for `-pkgpath "gno.land/r/g1mv0052e7r6s09f5t9xsqf00nj3tqsgt9dg52jr/zdex/v2"` and
 `-pkgdir "C:\Users\Hi\zdex\deploy\pearl\r-v2"`. Swap `-simulate only` for `-broadcast` when ready.
 
+## List ZDEX (300 GNOT)
+
+Creates GRC20 `ZDEX` (6 decimals, 1,000,000 minted to the deployer), Approves zdex v2, then `CreatePool` with **300 GNOT + 300,000 ZDEX** (fee 30 bps). Pool id `ugnot|ZDEX`.
+
+Wallet currently needs ≥ ~310 GNOT (300 deposit + gas/storage). Do not `SetNextPkg`.
+
+```
+cd C:\Users\Hi\zdex
+.\deploy\pearl\list-zdex.ps1 -KeyName deploykey -Stage Token
+.\deploy\pearl\list-zdex.ps1 -KeyName deploykey -Stage Token -Broadcast
+.\deploy\pearl\list-zdex.ps1 -KeyName deploykey -Stage Approve -Broadcast
+.\deploy\pearl\list-zdex.ps1 -KeyName deploykey -Stage Pool -Broadcast
+```
+
 ## After it lands
 
 - AMM: https://pearl.testnets.gno.land/p/g1mv0052e7r6s09f5t9xsqf00nj3tqsgt9dg52jr/zdex/amm/v1
