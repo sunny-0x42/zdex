@@ -143,6 +143,7 @@ function parseHub(raw, fallbackPkg, baseCaps) {
     caps.quote = set.has("quote");
     caps.feeShare = set.has("feeShare");
     caps.noStakeLp = set.has("noStakeLp");
+    caps.incentives = set.has("incentives");
     if (set.has("quote")) caps.exactOut = true;
   }
   return { version: p[0], pkg: p[1] || fallbackPkg, nextPkg: p[2] || "", caps };
@@ -329,6 +330,53 @@ function trackVolume(netId, pool) {
   pool.volumeU = String(volumeU);
 }
 
+function parseGaugeList(raw) {
+  const out = [];
+  for (const line of String(raw || "").split("\n")) {
+    const t = line.trim();
+    if (!t) continue;
+    const id = t.split(";")[0].trim();
+    if (id) out.push(id);
+  }
+  return out;
+}
+
+function parseGaugeSnapshot(raw) {
+  const p = String(raw || "").split(";");
+  if (!p[0]) return null;
+  const flag = (s) => s === "1" || s === "true" || s === "t";
+  return {
+    id: p[0],
+    acc: p[1] || "0",
+    totalFunded: p[2] || "0",
+    on: p.length < 4 ? true : flag(p[3]),
+    paused: flag(p[4]),
+  };
+}
+
+async function loadIncentives(net) {
+  const pkg = net.incentivesPkg || "";
+  if (!pkg) return { pkg: "", gauges: [] };
+  try {
+    const ids = parseGaugeList(await qeval(net, pkg, "GaugeList()"));
+    const gauges = (
+      await Promise.all(
+        ids.map(async (id) => {
+          try {
+            const snap = parseGaugeSnapshot(await qeval(net, pkg, `GaugeSnapshot(${JSON.stringify(id)})`));
+            return snap || { id, acc: "0", totalFunded: "0", on: true, paused: false };
+          } catch {
+            return { id, acc: "0", totalFunded: "0", on: true, paused: false };
+          }
+        }),
+      )
+    ).filter(Boolean);
+    return { pkg, gauges };
+  } catch {
+    return { pkg, gauges: [] };
+  }
+}
+
 async function attachQuotes(net, pkg, netId, pools) {
   await Promise.all(
     pools.map(async (row) => {
@@ -467,6 +515,12 @@ export async function loadLive(netId, pkgOverride) {
   await attachQuotes(net, pkg, net.id, body.pools);
   sortPools(body.pools);
   saveStore();
+  let incentives = { pkg: net.incentivesPkg || "", gauges: [] };
+  try {
+    incentives = await loadIncentives(net);
+  } catch {
+    /* Pearl sidecar may not be addpkg'd yet */
+  }
   const featured = body.pools.find((p) => p.symbol === "ZTT") || body.pools[0] || null;
   return {
     ok: true,
@@ -493,6 +547,8 @@ export async function loadLive(netId, pkgOverride) {
     version: body.version || "",
     nextPkg: body.nextPkg || "",
     modules: body.modules || {},
+    incentivesPkg: incentives.pkg || net.incentivesPkg || "",
+    gauges: incentives.gauges || [],
     error: mode === "v1" && /not declared/i.test(err) ? "" : err && mode === "v2" ? err : "",
   };
 }
@@ -576,7 +632,21 @@ export async function loadWallet(net, pkg, addr, live) {
   } catch {
     /* realm without points */
   }
-  return { addr, coins, balances, positions, vests, points, net: net.id };
+  const incentives = {};
+  const incPkg = net.incentivesPkg || "";
+  if (incPkg) {
+    const ids = (live?.gauges || []).map((g) => g.id).filter(Boolean);
+    await Promise.all(
+      ids.map(async (id) => {
+        try {
+          incentives[id] = String(await qeval(net, incPkg, `Claimable(${JSON.stringify(id)}, ${JSON.stringify(addr)})`));
+        } catch {
+          incentives[id] = "0";
+        }
+      }),
+    );
+  }
+  return { addr, coins, balances, positions, vests, points, incentives, net: net.id };
 }
 
 function hashAttempts(hash) {
@@ -896,6 +966,7 @@ export async function dispatch(pathname, search) {
         faucet: n.faucet || "",
         pkg: n.pkg,
         hubPkg: n.hubPkg || "",
+        incentivesPkg: n.incentivesPkg || "",
       })),
     };
   }

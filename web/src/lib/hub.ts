@@ -1,4 +1,4 @@
-import type { Caps, Hub, Live, Tab } from "../types";
+import type { Caps, Gauge, Hub, Live, Network, Tab } from "../types";
 
 export const ALL_TABS: Tab[] = ["swap", "pools", "liq", "book", "create", "port", "stats"];
 export const NAV_TABS: Tab[] = ["swap", "pools", "liq", "book", "port", "stats"];
@@ -20,6 +20,9 @@ export const FUNC_SURFACE: Record<string, string> = {
   SetPaused: "admin",
   SetNextPkg: "admin",
   SetModule: "admin",
+  Fund: "incentives",
+  Claim: "incentives",
+  Sync: "incentives",
 };
 
 const DEFAULT_CAPS: Caps = {
@@ -34,6 +37,7 @@ const DEFAULT_CAPS: Caps = {
   quote: true,
   feeShare: true,
   noStakeLp: true,
+  incentives: false,
 };
 
 export function parseCapsList(raw: string | undefined, base?: Caps): Caps {
@@ -52,6 +56,7 @@ export function parseCapsList(raw: string | undefined, base?: Caps): Caps {
   caps.quote = set.has("quote");
   caps.feeShare = set.has("feeShare");
   caps.noStakeLp = set.has("noStakeLp");
+  caps.incentives = set.has("incentives");
   if (set.has("quote")) caps.exactOut = true;
   return caps;
 }
@@ -88,8 +93,50 @@ export function pkgForSurface(live: Live | undefined, surface: string, fallback:
   return live?.pkg || fallback;
 }
 
-export function pkgForFunc(live: Live | undefined, func: string, fallback: string): string {
-  return pkgForSurface(live, FUNC_SURFACE[func] || "admin", fallback);
+export function pkgForFunc(live: Live | undefined, func: string, fallback: string, incentivesPkg = ""): string {
+  const surface = FUNC_SURFACE[func] || "admin";
+  if (surface === "incentives") {
+    return live?.modules?.incentives || live?.incentivesPkg || incentivesPkg || "";
+  }
+  return pkgForSurface(live, surface, fallback);
+}
+
+export function parseGaugeList(raw: string | undefined): string[] {
+  const out: string[] = [];
+  for (const line of String(raw || "").split("\n")) {
+    const t = line.trim();
+    if (!t) continue;
+    const id = t.split(";")[0].trim();
+    if (id) out.push(id);
+  }
+  return out;
+}
+
+export function parseGaugeSnapshot(raw: string | undefined): Gauge | null {
+  const p = String(raw || "").split(";");
+  if (!p[0]) return null;
+  const flag = (s: string | undefined) => s === "1" || s === "true" || s === "t";
+  return {
+    id: p[0],
+    acc: p[1] || "0",
+    totalFunded: p[2] || "0",
+    on: p.length < 4 ? true : flag(p[3]),
+    paused: flag(p[4]),
+  };
+}
+
+export function gaugeFor(live: Live | undefined, poolId: string): Gauge | undefined {
+  return live?.gauges?.find((g) => g.id === poolId);
+}
+
+export function isIncentivized(live: Live | undefined, poolId: string): boolean {
+  const g = gaugeFor(live, poolId);
+  return Boolean(g && g.on);
+}
+
+export function incentivesEnabled(net?: Pick<Network, "incentivesPkg">, caps?: Caps): boolean {
+  if (net?.incentivesPkg) return true;
+  return caps?.incentives === true;
 }
 
 export function tabsFor(caps?: Caps): Tab[] {

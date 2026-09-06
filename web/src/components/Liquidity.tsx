@@ -3,7 +3,9 @@ import { useDex } from "../context";
 import { lpFeeAprPct, mulDiv } from "../lib/amm";
 import { api } from "../lib/api";
 import { fmtGnot, fmtInt, toUgnot } from "../lib/format";
+import { isIncentivized } from "../lib/hub";
 import type { ChainToken, Pool } from "../types";
+import GaugePanel from "./GaugePanel";
 
 function poolStatus(p: Pool, height: number, d: { lpLocked: string; noLpSeed: string; canAdd: string }) {
   if (Number(p.totalLP) <= 0) return { ok: false, label: d.noLpSeed };
@@ -236,23 +238,26 @@ export default function Liquidity() {
           {existing && !st.ok ? <p className="hint">{st.label}</p> : null}
         </div>
 
-        <div className="card">
-          <div className="card-head">
-            <h2>{d.removeLp}</h2>
+        <div className="stack">
+          <div className="card">
+            <div className="card-head">
+              <h2>{d.removeLp}</h2>
+            </div>
+            <p className="stat">
+              {d.yourLp} <b>{fmtInt(mine)}</b> {existing ? existing.symbol : ""}
+            </p>
+            <label>LP</label>
+            <input type="number" value={burn} onChange={(e) => setBurn(e.target.value)} />
+            <button
+              className="btn ghost wide"
+              type="button"
+              disabled={!!busy || !existing}
+              onClick={() => void runTx("Remove LP", () => call("RemoveLiquidity", [existing!.id, burn.trim(), "0", "0"])).catch(() => {})}
+            >
+              {d.removeLp}
+            </button>
           </div>
-          <p className="stat">
-            {d.yourLp} <b>{fmtInt(mine)}</b> {existing ? existing.symbol : ""}
-          </p>
-          <label>LP</label>
-          <input type="number" value={burn} onChange={(e) => setBurn(e.target.value)} />
-          <button
-            className="btn ghost wide"
-            type="button"
-            disabled={!!busy || !existing}
-            onClick={() => void runTx("Remove LP", () => call("RemoveLiquidity", [existing!.id, burn.trim(), "0", "0"])).catch(() => {})}
-          >
-            {d.removeLp}
-          </button>
+          <GaugePanel pool={existing || pool} />
         </div>
       </div>
 
@@ -278,6 +283,7 @@ export default function Liquidity() {
                     <b>{row.symbol}/GNOT</b>
                     <div className="muted">{row.name}</div>
                   </div>
+                  {isIncentivized(live, row.id) ? <span className="pill live">{d.incentivized}</span> : null}
                 </div>
                 <div className="px">
                   {fmtGnot(row.reserveU)} <span className="muted">GNOT</span>

@@ -1,10 +1,11 @@
 import { useDex } from "../context";
 import { lpFeeAprPct } from "../lib/amm";
 import { fmtGnot, fmtInt } from "../lib/format";
+import { isIncentivized } from "../lib/hub";
 import Spark from "./Spark";
 
 export default function Markets() {
-  const { pools, tradePool, addLp, d } = useDex();
+  const { pools, tradePool, addLp, d, live } = useDex();
   if (!pools.length) {
     return <div className="empty">{d.noMarkets}</div>;
   }
@@ -19,6 +20,7 @@ export default function Markets() {
                 <b>{p.symbol}/GNOT</b>
                 <div className="muted">{p.name}</div>
               </div>
+              {isIncentivized(live, p.id) ? <span className="pill live">{d.incentivized}</span> : null}
             </div>
             <div className="px">
               {fmtInt(p.quote1gnot)} <span className="muted">{p.symbol}</span>
@@ -58,9 +60,12 @@ export default function Markets() {
               {pools.map((p) => (
                 <tr key={p.id}>
                   <td>
-                    <button className="link" type="button" onClick={() => tradePool(p.id)}>
-                      {p.symbol}/GNOT
-                    </button>
+                    <div className="pair-cell">
+                      <button className="link" type="button" onClick={() => tradePool(p.id)}>
+                        {p.symbol}/GNOT
+                      </button>
+                      {isIncentivized(live, p.id) ? <span className="pill live">{d.incentivized}</span> : null}
+                    </div>
                     <div className="muted">{p.name}</div>
                   </td>
                   <td className="r mono">{fmtInt(p.quote1gnot)}</td>

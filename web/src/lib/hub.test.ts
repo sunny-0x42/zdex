@@ -1,5 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { parseCapsList, parseHubSnapshot, parseModules, pkgForFunc, tabsFor } from "./hub";
+import {
+  incentivesEnabled,
+  isIncentivized,
+  parseCapsList,
+  parseGaugeList,
+  parseGaugeSnapshot,
+  parseHubSnapshot,
+  parseModules,
+  pkgForFunc,
+  tabsFor,
+} from "./hub";
+import { resolvePkgPath } from "./wallets";
 
 describe("hub", () => {
   it("parses HubSnapshot with caps after the third field", () => {
@@ -27,5 +38,55 @@ describe("hub", () => {
   it("hides book tab when cap is off", () => {
     const caps = parseCapsList("swap;lp;create;points;quote");
     expect(tabsFor(caps)).toEqual(["swap", "pools", "liq", "port", "stats"]);
+  });
+
+  it("treats incentives cap as optional", () => {
+    const without = parseCapsList("swap;lp;create;book;points;quote;feeShare;noStakeLp");
+    expect(without.incentives).toBe(false);
+    expect(without.swap).toBe(true);
+    const withInc = parseCapsList("swap;lp;incentives");
+    expect(withInc.incentives).toBe(true);
+    expect(incentivesEnabled({ incentivesPkg: "" }, without)).toBe(false);
+    expect(incentivesEnabled({ incentivesPkg: "gno.land/r/zdex/incentives/v1" }, without)).toBe(true);
+    expect(incentivesEnabled({ incentivesPkg: "" }, withInc)).toBe(true);
+  });
+
+  it("routes Fund/Claim/Sync to incentivesPkg and does not steal swap", () => {
+    const m = parseModules("swap;gno.land/r/zdex\nbook;gno.land/r/zdex/book/v2");
+    const live = { pools: [], orders: [], ok: true, pkg: "gno.land/r/zdex", modules: m };
+    const inc = "gno.land/r/zdex/incentives/v1";
+    expect(pkgForFunc(live, "Fund", "fallback", inc)).toBe(inc);
+    expect(pkgForFunc(live, "Claim", "fallback", inc)).toBe(inc);
+    expect(pkgForFunc(live, "Sync", "fallback", inc)).toBe(inc);
+    expect(pkgForFunc(live, "SwapExactIn", "fallback", inc)).toBe("gno.land/r/zdex");
+    expect(pkgForFunc(live, "AddLiquidity", "fallback", inc)).toBe("gno.land/r/zdex");
+    expect(pkgForFunc(live, "ClaimFeeShare", "fallback", inc)).toBe("gno.land/r/zdex");
+    expect(pkgForFunc(live, "Fund", "gno.land/r/zdex", "")).toBe("");
+    expect(resolvePkgPath("Fund", live, "gno.land/r/zdex", { incentivesPkg: inc })).toBe(inc);
+    expect(resolvePkgPath("SwapExactIn", live, "fallback", { incentivesPkg: inc })).toBe("gno.land/r/zdex");
+  });
+
+  it("prefers modules.incentives over config incentivesPkg", () => {
+    const live = {
+      pools: [],
+      orders: [],
+      ok: true,
+      pkg: "gno.land/r/zdex",
+      modules: { swap: "gno.land/r/zdex", incentives: "gno.land/r/zdex/incentives/v2" },
+    };
+    expect(pkgForFunc(live, "Fund", "gno.land/r/zdex", "gno.land/r/zdex/incentives/v1")).toBe(
+      "gno.land/r/zdex/incentives/v2",
+    );
+  });
+
+  it("parses GaugeList and GaugeSnapshot", () => {
+    expect(parseGaugeList("ugnot|ZTT\nugnot|DEMO")).toEqual(["ugnot|ZTT", "ugnot|DEMO"]);
+    expect(parseGaugeList("ugnot|ZTT;100;5000000;1;0")).toEqual(["ugnot|ZTT"]);
+    const g = parseGaugeSnapshot("ugnot|ZTT;12;5000000;1;0");
+    expect(g).toEqual({ id: "ugnot|ZTT", acc: "12", totalFunded: "5000000", on: true, paused: false });
+    expect(parseGaugeSnapshot("ugnot|ZTT;0;0;0;1")?.on).toBe(false);
+    const live = { pools: [], orders: [], ok: true, gauges: [g!] };
+    expect(isIncentivized(live, "ugnot|ZTT")).toBe(true);
+    expect(isIncentivized(live, "ugnot|DEMO")).toBe(false);
   });
 });

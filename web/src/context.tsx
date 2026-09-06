@@ -2,8 +2,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { DEFAULT_NET, NETWORKS, PKG_PATH } from "../config.js";
 import { copy, type Dict } from "./i18n";
 import { api, mergeSparks, sleep } from "./lib/api";
-import { ALL_TABS, pkgForFunc, readPkgOverride, tabsFor, writePkgOverride } from "./lib/hub";
-import { connectAdena, connectWatch, doContractCall, hasAdena } from "./lib/wallets";
+import { ALL_TABS, FUNC_SURFACE, readPkgOverride, tabsFor, writePkgOverride } from "./lib/hub";
+import { connectAdena, connectWatch, doContractCall, hasAdena, resolvePkgPath } from "./lib/wallets";
 import type { Account, Live, LiveState, Network, Pool, Tab, Toast, TxResult, Wallet } from "./types";
 
 const NETS = NETWORKS as Record<string, Network>;
@@ -265,10 +265,11 @@ export function DexProvider({ children }: { children: ReactNode }) {
   const call = useCallback(
     async (func: string, args: string[], send = "", pkgPath = "") => {
       if (!account || account.source !== "adena") throw new Error(d.needWallet);
-      const path = pkgPath || pkgForFunc(live, func, pkg);
+      const path = pkgPath || resolvePkgPath(func, live, pkg, net);
+      if (!path) throw new Error(FUNC_SURFACE[func] === "incentives" ? d.noIncentivesPkg : "package path missing");
       return doContractCall({ caller: account.address, pkgPath: path, func, args, send });
     },
-    [account, pkg, live, d],
+    [account, pkg, live, d, net],
   );
 
   const waitTx = useCallback(

@@ -22,6 +22,7 @@ export type Network = {
   faucet: string;
   pkg: string;
   hubPkg?: string;
+  incentivesPkg?: string;
   viewAddr: string;
 };
 
@@ -37,6 +38,15 @@ export type Caps = {
   quote?: boolean;
   feeShare?: boolean;
   noStakeLp?: boolean;
+  incentives?: boolean;
+};
+
+export type Gauge = {
+  id: string;
+  acc: string;
+  totalFunded: string;
+  on: boolean;
+  paused: boolean;
 };
 
 export type Hub = {
@@ -107,6 +117,8 @@ export type Live = {
   version?: string;
   nextPkg?: string;
   modules?: Record<string, string>;
+  incentivesPkg?: string;
+  gauges?: Gauge[];
   error?: string;
 };
 
@@ -117,6 +129,7 @@ export type Wallet = {
   positions: Record<string, string>;
   vests: Record<string, string>;
   points?: { life: string; epoch: string; closed: string; claimable: string };
+  incentives?: Record<string, string>;
 };
 
 export type Account = {

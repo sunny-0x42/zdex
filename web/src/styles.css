@@ -246,6 +246,8 @@ input:focus, select:focus { outline: none; border-color: var(--accent-border); }
 .mkt-card:hover { border-color: var(--accent-border); transform: translateY(-1px); }
 .mkt-card.on { border-color: var(--accent-border); box-shadow: 0 0 0 1px var(--accent-mid-soft); }
 .mkt-top { display: flex; align-items: center; gap: 0.7rem; margin-bottom: 0.55rem; }
+.mkt-top .pill { margin-left: auto; flex-shrink: 0; }
+.pair-cell { display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; }
 .tok-av {
   width: 36px; height: 36px; border-radius: 11px;
   display: grid; place-items: center; font-weight: 700; font-size: 12px;

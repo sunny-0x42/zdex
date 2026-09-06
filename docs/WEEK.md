@@ -2,7 +2,7 @@
 
 **Owner kế hoạch:** `zdex-chief`  
 **Outcome:** Zdex ship được như DEX on-chain trên Gno.land — listing `CreatePool`, swap native `ugnot`, LP, escrow book, points — không phải launchpad, không clone Uniswap.  
-**Generation:** live code `gno.land/r/zdex/v2`. Hub v1 `NextPkg` trỏ v2. LP v1 không migrate.  
+**Generation:** Pearl live `gno.land/r/g1mv0052e7r6s09f5t9xsqf00nj3tqsgt9dg52jr/zdex/v2` (immutable, 0 pools). AMM `…/p/…/zdex/amm/v1`. UI https://zdex-gno.netlify.app default pearl. Local `gno.land/r/zdex/v2`. LP không migrate giữa generation.  
 **Phạm vi:** realm, tests, English UI `web/`, deploy tree. Không tweet, không merge, không addpkg nếu chưa có human yes.
 
 ## Frozen (không invent)
@@ -15,6 +15,7 @@
 - Internal mint in-realm; GRC20 ngoài = Approve + TransferFrom.
 - UI English. LP token picker. Pool id `ugnot|<SYMBOL>`.
 - Tests: `gno test ./gno.land/r/zdex/` và `gno test ./gno.land/r/zdex/v2`. UI: `cd web; npm test`.
+- Pearl v2 `validModule` freeze: `swap;lp;create;book;points;quote;admin`. `SetModule("incentives")` panic. Incentives = realm **mới**, không patch swap/LP.
 
 ## Không làm trong 2 tuần
 
@@ -24,6 +25,7 @@
 - Hooks production (research note thôi).
 - Sửa `gnomemepad` / Gno Vault.
 - Merge, addpkg, tweet, fund movement — trừ khi human gõ **yes**.
+- Patch Pearl v2 swap/LP; copy DEX `v3` chỉ để gắn farm; `SetModule("incentives")` trên live v2; `SetNextPkg(v2 → incentives sidecar)`.
 
 ## Gap hiện tại (cơ sở kế hoạch)
 
@@ -107,17 +109,35 @@
 
 ---
 
+## Tuần 3 — incentives sidecar (upgrade-per-module)
+
+Routing: `docs/research/incentives-routing.md`. Quyết định **sidecar** `incentives/v1`, không copy v3.
+
+### 9. Incentivized pools = module realm mới
+
+| | |
+|---|---|
+| **Owner** | `zdex-protocol` + `zdex-defi` + `zdex-product` |
+| **Outcome** | Realm mới `gno.land/r/zdex/incentives/v1` (Pearl path `…/g1mv…/zdex/incentives/v1` sau yes). v2 swap/LP/`CreatePool`/points/epoch pot **không đổi**. Reward state riêng; không extra stake cho LP swap fee 5/6; không hớt 80% protocol ugnot pot. Protocol: pkg + test, không sửa AMM v2. DeFi: công thức + test neo fee/pot. Product: English UI đọc v2 `HubSnapshot` cho DEX và path sidecar cho farm; no-advice. 0 pools → không LP migrate. `gno test` v1/v2 + incentives; `cd web; npm test`. Packet addpkg sẵn, **không broadcast**. |
+| **Human yes** | **Có** cho Pearl addpkg module mới **và** mọi `SetNextPkg` trên Pearl v2. Default routing: **không** `SetNextPkg` vào sidecar (NextPkg = hub DEX, không phải farm). Không hỏi mnemonic. Không raw `gnokey`. |
+
+Review (không owner): `zdex-security` (không chặn swap v2; không confused-deputy). `zdex-devops` tree khi test xanh. `zdex-trust` copy không APY.
+
+---
+
 ## Thứ tự / phụ thuộc
 
 ```
 Tuần 1:  [1 protocol] [2 security] [3 defi] [4 product] [5 research]  ← song song
 Tuần 2:  [6 protocol Render] → [7 devops gate] → [8 addpkg]  ← 8 chặn human yes
+Tuần 3:  [9 protocol+defi+product sidecar]  ← song song với 1–7; Pearl addpkg + SetNextPkg chặn yes
 ```
 
 - 1 xong mới khóa copy `Render`/README (6 + phần trust trong 8).
 - 2 + 3 phải xanh trước 7.
 - 4 chạy local `gno.land/r/zdex/v2`; Sapphire pkg chỉ đổi sau 8.
 - 5 không chặn ship; đọc trước khi viết claim công khai.
+- 9 không đụng `r/zdex/v2` swap/LP; không phụ thuộc 8 (Pearl v2 đã live). Không `SetModule("incentives")`.
 
 ## Gate trước khi hỏi deploy yes
 
@@ -135,3 +155,5 @@ Stop. Báo residual. Không addpkg nếu một lệnh fail.
 - `Launch` vẫn gọi được trên realm (legacy ABI). Product không expose.
 - Hooks, router, pair không-`ugnot`: ngoài tuần này.
 - Public tweet / production domain: human yes riêng, không nằm week list.
+- Pearl v2 Caps không có `incentives`; sidecar không hiện trong `Modules()` của v2.
+- Incentives/v1 upgrade sau = `incentives/v2`, không copy DEX.

@@ -1,4 +1,9 @@
-import type { Account, Network } from "../types";
+import type { Account, Live, Network } from "../types";
+import { pkgForFunc } from "./hub";
+
+export function resolvePkgPath(func: string, live: Live | undefined, dexPkg: string, net?: Pick<Network, "incentivesPkg">): string {
+  return pkgForFunc(live, func, dexPkg, net?.incentivesPkg || "");
+}
 
 export function hasAdena(): boolean {
   return typeof window !== "undefined" && !!window.adena;
