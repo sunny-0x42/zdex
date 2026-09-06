@@ -1,0 +1,16 @@
+node_modules/
+web/node_modules/
+web/dist/
+web/data/spark.json
+web/deploy-error.txt
+*.log
+.DS_Store
+.env
+.env.*
+!.env.example
+.gnohome/
+*.key
+*.mnemonic
+.vscode/
+.idea/
+.grok/
