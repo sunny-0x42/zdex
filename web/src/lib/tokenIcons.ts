@@ -1,7 +1,8 @@
-/** Official icons shipped in web/public/tokens. Unknown tickers use initials. */
+/** Gnoscan / Adena assets from onbloc/gno-token-resource. Unknown tickers use initials. */
 const FILES: Record<string, string> = {
   GNOT: "/tokens/gnot.svg",
   UGNOT: "/tokens/gnot.svg",
+  WUGNOT: "/tokens/wugnot.svg",
   ATONE: "/tokens/atone.svg",
   UATONE: "/tokens/atone.svg",
   PHOTON: "/tokens/photon.svg",
@@ -14,6 +15,7 @@ const FILES: Record<string, string> = {
   DAI: "/tokens/dai.svg",
   SOL: "/tokens/sol.svg",
   ATOM: "/tokens/atom.svg",
+  GNS: "/tokens/gns.svg",
   BNB: "/tokens/bnb.svg",
   AVAX: "/tokens/avax.svg",
   LINK: "/tokens/link.svg",

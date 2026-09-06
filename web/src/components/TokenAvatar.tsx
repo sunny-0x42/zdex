@@ -2,15 +2,15 @@ import { tokenHue, tokenIconSrc, tokenInitials } from "../lib/tokenIcons";
 
 export default function TokenAvatar({ symbol, size = 36 }: { symbol: string; size?: number }) {
   const src = tokenIconSrc(symbol);
-  const gnot = /^(ugnot|gnot)$/i.test(symbol || "");
   if (src) {
     return (
       <img
-        className={`tok-av tok-av-img${gnot ? " tok-av-gnot" : ""}`}
+        className="tok-av tok-av-img"
         src={src}
         alt=""
         width={size}
         height={size}
+        style={{ width: size, height: size }}
       />
     );
   }

@@ -11,6 +11,8 @@ describe("token icons", () => {
     expect(tokenIconSrc("BTC")).toBe("/tokens/btc.svg");
     expect(tokenIconSrc("ETH")).toBe("/tokens/eth.svg");
     expect(tokenIconSrc("WETH")).toBe("/tokens/eth.svg");
+    expect(tokenIconSrc("GNS")).toBe("/tokens/gns.svg");
+    expect(tokenIconSrc("wugnot")).toBe("/tokens/wugnot.svg");
   });
   it("uses ticker letters when no official icon", () => {
     expect(tokenIconSrc("MEME")).toBeNull();

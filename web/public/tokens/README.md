@@ -1,9 +1,12 @@
-Official token marks used as UI avatars.
+Token avatars match Gnoscan (Adena / GnoSwap).
 
-| File | Source |
+Primary source: [onbloc/gno-token-resource](https://github.com/onbloc/gno-token-resource)
+
+| File | Gnoscan path |
 |---|---|
-| gnot.svg | [gnolang/branding](https://github.com/gnolang/branding) Logo Short Light |
-| atone.svg, photon.svg | [cosmos/chain-registry atomone](https://github.com/cosmos/chain-registry/tree/master/atomone/images) |
-| btc eth usdc usdt wbtc dai sol atom bnb avax link uni matic trx xrp ada dot ltc doge | [spothq/cryptocurrency-icons](https://github.com/spothq/cryptocurrency-icons) color SVG (MIT) |
+| gnot.svg | gno-native/images/ugnot.svg |
+| atone.svg photon.svg btc.svg eth.svg usdc.svg usdt.svg dai.svg sol.svg atom.svg trx.svg | grc20/images/test_*.svg |
+| gns.svg | grc20/images/gno_land_r_gnoswap_gns.svg |
+| wugnot.svg | grc20/images/gno_land_r_demo_wugnot.svg |
 
-Unknown tickers render as letters in `TokenAvatar`.
+Unknown tickers render as letters in TokenAvatar. ZDEX uses the zdex mark.

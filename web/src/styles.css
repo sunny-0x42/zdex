@@ -188,7 +188,7 @@ a:hover { text-decoration: underline; }
 .tick b { font-family: var(--mono); color: var(--text); }
 .tick .up { color: var(--good); }
 .tick .dn { color: var(--bad); }
-.tick-ico { width: 12px; height: 12px; border-radius: 3px; object-fit: cover; flex-shrink: 0; }
+.tick-ico { width: 12px; height: 12px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
 
 .wrap { max-width: 1120px; margin: 0 auto; padding: 1.2rem 1.5rem 1.25rem; }
 .page-head {
@@ -340,8 +340,12 @@ input:focus-visible, select:focus-visible { outline: 2px solid var(--accent-bord
   background: var(--accent-soft); color: var(--accent-2);
   flex-shrink: 0;
 }
-.tok-av-img { object-fit: contain; padding: 0; background: #141414; }
-.tok-av-gnot { padding: 18%; background: #111; }
+.tok-av.tok-av-img {
+  object-fit: cover;
+  padding: 0;
+  background: transparent;
+  border-radius: 50%;
+}
 .tok-av-letters {
   letter-spacing: -0.04em;
   text-transform: uppercase;
