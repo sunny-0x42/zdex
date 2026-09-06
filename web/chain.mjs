@@ -351,30 +351,49 @@ function parseGaugeSnapshot(raw) {
     totalFunded: p[2] || "0",
     on: p.length < 4 ? true : flag(p[3]),
     paused: flag(p[4]),
+    endH: p[5] || "",
+    rewardPerBlock: p[6] || "0",
+    remaining: p[7] || "",
   };
 }
 
-async function loadIncentives(net) {
-  const pkg = net.incentivesPkg || "";
-  if (!pkg) return { pkg: "", gauges: [] };
+async function loadIncentivesPkg(net, pkg) {
+  if (!pkg) return [];
   try {
     const ids = parseGaugeList(await qeval(net, pkg, "GaugeList()"));
-    const gauges = (
+    return (
       await Promise.all(
         ids.map(async (id) => {
           try {
             const snap = parseGaugeSnapshot(await qeval(net, pkg, `GaugeSnapshot(${JSON.stringify(id)})`));
-            return snap || { id, acc: "0", totalFunded: "0", on: true, paused: false };
+            const g = snap || { id, acc: "0", totalFunded: "0", on: true, paused: false };
+            g.pkg = pkg;
+            return g;
           } catch {
-            return { id, acc: "0", totalFunded: "0", on: true, paused: false };
+            return { id, acc: "0", totalFunded: "0", on: true, paused: false, pkg };
           }
         }),
       )
     ).filter(Boolean);
-    return { pkg, gauges };
   } catch {
-    return { pkg, gauges: [] };
+    return [];
   }
+}
+
+async function loadIncentives(net) {
+  const gauges = [];
+  let v2Live = false;
+  if (net.incentivesPkg) gauges.push(...(await loadIncentivesPkg(net, net.incentivesPkg)));
+  if (net.incentivesV2Pkg) {
+    try {
+      const ver = String(await qeval(net, net.incentivesV2Pkg, "Version()"));
+      v2Live = Boolean(ver);
+    } catch {
+      v2Live = false;
+    }
+    if (v2Live) gauges.push(...(await loadIncentivesPkg(net, net.incentivesV2Pkg)));
+  }
+  return { pkg: net.incentivesPkg || "", gauges, v2Live };
 }
 
 async function attachQuotes(net, pkg, netId, pools) {
@@ -547,7 +566,9 @@ export async function loadLive(netId, pkgOverride) {
     version: body.version || "",
     nextPkg: body.nextPkg || "",
     modules: body.modules || {},
-    incentivesPkg: incentives.pkg || net.incentivesPkg || "",
+    incentivesPkg: net.incentivesPkg || "",
+    incentivesV2Pkg: net.incentivesV2Pkg || "",
+    incentivesV2Live: Boolean(incentives.v2Live),
     gauges: incentives.gauges || [],
     error: mode === "v1" && /not declared/i.test(err) ? "" : err && mode === "v2" ? err : "",
   };
@@ -633,15 +654,19 @@ export async function loadWallet(net, pkg, addr, live) {
     /* realm without points */
   }
   const incentives = {};
-  const incPkg = net.incentivesPkg || "";
-  if (incPkg) {
-    const ids = (live?.gauges || []).map((g) => g.id).filter(Boolean);
+  const gaugeRows = live?.gauges || [];
+  if (gaugeRows.length) {
     await Promise.all(
-      ids.map(async (id) => {
+      gaugeRows.map(async (g) => {
+        const id = g.id;
+        const pkg = g.pkg || net.incentivesPkg || "";
+        if (!id || !pkg) return;
         try {
-          incentives[id] = String(await qeval(net, incPkg, `Claimable(${JSON.stringify(id)}, ${JSON.stringify(addr)})`));
+          const n = String(await qeval(net, pkg, `Claimable(${JSON.stringify(id)}, ${JSON.stringify(addr)})`));
+          const prev = BigInt(incentives[id] || "0");
+          incentives[id] = (prev + BigInt(n || "0")).toString();
         } catch {
-          incentives[id] = "0";
+          if (incentives[id] == null) incentives[id] = "0";
         }
       }),
     );

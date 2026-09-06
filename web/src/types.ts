@@ -23,6 +23,7 @@ export type Network = {
   pkg: string;
   hubPkg?: string;
   incentivesPkg?: string;
+  incentivesV2Pkg?: string;
   viewAddr: string;
 };
 
@@ -50,6 +51,7 @@ export type Gauge = {
   endH?: string;
   rewardPerBlock?: string;
   remaining?: string;
+  pkg?: string;
 };
 
 export type Hub = {
@@ -121,6 +123,8 @@ export type Live = {
   nextPkg?: string;
   modules?: Record<string, string>;
   incentivesPkg?: string;
+  incentivesV2Pkg?: string;
+  incentivesV2Live?: boolean;
   gauges?: Gauge[];
   error?: string;
 };

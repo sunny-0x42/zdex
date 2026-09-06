@@ -4,12 +4,14 @@ import { gaugeFor } from "../lib/hub";
 import { fmtGnot, fmtInt } from "../lib/format";
 import { isIncentivized } from "../lib/hub";
 import Spark from "./Spark";
+import { PairAvatars } from "./TokenAvatar";
 
 export default function Markets() {
   const { pools, tradePool, addLp, setTab, d, live, wallet } = useDex();
   if (!pools.length) {
     return (
       <div className="card empty-card">
+        <img className="empty-art" src="/empty-pools.jpg" alt="" />
         <h2>{d.noPoolsYet}</h2>
         <p className="muted">{d.emptyPoolsBody}</p>
         <div className="empty-actions">
@@ -29,7 +31,7 @@ export default function Markets() {
         {pools.map((p) => (
           <article key={p.id} className="mkt-card" onClick={() => tradePool(p.id)}>
             <div className="mkt-top">
-              <div className="tok-av">{(p.symbol || "?").slice(0, 2).toUpperCase()}</div>
+              <PairAvatars symbol={p.symbol || "?"} />
               <div>
                 <b>{p.symbol}/GNOT</b>
                 <div className="muted">{p.name}</div>
@@ -46,26 +48,28 @@ export default function Markets() {
                 : ""}
             </div>
             <Spark className="mini-spark" values={p.spark || []} w={240} h={36} />
-            <button
-              className="btn sm"
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                addLp(p.id);
-              }}
-            >
-              {d.canAdd}
-            </button>
-            <button
-              className="btn ghost sm"
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                addLp(p.id);
-              }}
-            >
-              {d.incentivize}
-            </button>
+            <div className="mkt-actions">
+              <button
+                className="btn sm"
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  addLp(p.id);
+                }}
+              >
+                {d.canAdd}
+              </button>
+              <button
+                className="btn ghost sm"
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  addLp(p.id);
+                }}
+              >
+                {d.incentivize}
+              </button>
+            </div>
           </article>
         ))}
       </div>
@@ -90,6 +94,7 @@ export default function Markets() {
                 <tr key={p.id}>
                   <td>
                     <div className="pair-cell">
+                      <PairAvatars symbol={p.symbol} size={26} />
                       <button className="link" type="button" onClick={() => tradePool(p.id)}>
                         {p.symbol}/GNOT
                       </button>

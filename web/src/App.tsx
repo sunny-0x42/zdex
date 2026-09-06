@@ -26,7 +26,7 @@ export default function App() {
       </a>
       <Header />
       <Ticker />
-      <div className="wrap" id="main">
+      <div className="wrap fade-up" id="main" key={tab}>
         <div className="page-head">
           <div>
             <h1>{title}</h1>

@@ -6,6 +6,7 @@ import { fmtGnot, fmtInt, toTokenBase, toUgnot, tokenPkgFromKey } from "../lib/f
 import { isIncentivized } from "../lib/hub";
 import type { ChainToken, Pool } from "../types";
 import GaugePanel from "./GaugePanel";
+import { TokenChip } from "./TokenAvatar";
 
 function poolStatus(p: Pool, height: number, d: { lpLocked: string; noLpSeed: string; canAdd: string }) {
   if (Number(p.totalLP) <= 0) return { ok: false, label: d.noLpSeed };
@@ -137,6 +138,7 @@ export default function Liquidity() {
 
   return (
     <section>
+      {!pools.length ? <img className="create-hero" src="/empty-liq.jpg" alt="" /> : null}
       <p className="lede">{d.noStakeHint}</p>
       <div className="grid">
         <div className="card">
@@ -150,7 +152,7 @@ export default function Liquidity() {
             </div>
             <div className="token-row">
               <input type="number" min="0" step="any" value={gnot} onChange={(e) => setGnot(e.target.value)} />
-              <div className="token-chip">GNOT</div>
+              <TokenChip symbol="GNOT" />
             </div>
           </div>
 
@@ -202,13 +204,16 @@ export default function Liquidity() {
               </p>
             ) : null}
             <label>{isNew ? d.tokenAmt : d.tokenMax}</label>
-            <input
-              type="number"
-              min="0"
-              value={isNew ? tokenAmt : need > 0n ? need.toString() : tokenAmt}
-              readOnly={!isNew && need > 0n}
-              onChange={(e) => setTokenAmt(e.target.value)}
-            />
+            <div className="token-row">
+              <input
+                type="number"
+                min="0"
+                value={isNew ? tokenAmt : need > 0n ? need.toString() : tokenAmt}
+                readOnly={!isNew && need > 0n}
+                onChange={(e) => setTokenAmt(e.target.value)}
+              />
+              {resolved ? <TokenChip symbol={resolved.symbol} /> : null}
+            </div>
           </div>
 
           {isNew ? (

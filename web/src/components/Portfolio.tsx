@@ -5,7 +5,13 @@ export default function Portfolio() {
   const { walletAddr, previewing, wallet, pools, pool, busy, runTx, call, d, live } = useDex();
   const showPoints = live.caps?.points !== false || live.caps?.feeShare !== false;
   if (!walletAddr) {
-    return <div className="empty">{d.noWallet}</div>;
+    return (
+      <div className="card empty-card">
+        <img className="empty-art" src="/empty-wallet.jpg" alt="" />
+        <h2>{d.noWallet}</h2>
+        <p className="muted">{d.emptyWalletBody}</p>
+      </div>
+    );
   }
   const vests = [];
   for (const p of pools) {

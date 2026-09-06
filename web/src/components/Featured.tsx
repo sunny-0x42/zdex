@@ -1,13 +1,14 @@
 import { useDex } from "../context";
 import { fmtApr, lpFeeAprPct } from "../lib/amm";
 import { fmtGnot, fmtInt } from "../lib/format";
+import { PairAvatars } from "./TokenAvatar";
 
 export default function Featured() {
   const { featured, tradePool, d } = useDex();
   if (!featured) return null;
   return (
     <div className="featured">
-      <div className="tok-av">{(featured.symbol || "ZT").slice(0, 2).toUpperCase()}</div>
+      <PairAvatars symbol={featured.symbol || "ZT"} />
       <div className="feat-copy">
         <b>
           {featured.symbol} / GNOT

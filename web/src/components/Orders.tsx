@@ -61,56 +61,57 @@ export default function Orders() {
           <h2>{d.openOrders}</h2>
           <span className="muted">{orders.length}</span>
         </div>
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>id</th>
-                <th>side</th>
-                <th className="r">{d.give}</th>
-                <th className="r">{d.want}</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {!orders.length ? (
-                <tr>
-                  <td colSpan={5} className="muted">
-                    {d.emptyBook}
-                  </td>
-                </tr>
-              ) : (
-                orders.map((o) => (
-                  <tr key={o.id}>
-                    <td className="mono">{o.id}</td>
-                    <td className={`side-${o.side}`}>{o.side}</td>
-                    <td className="r">{fmtInt(o.giveAmt)}</td>
-                    <td className="r">{fmtInt(o.wantAmt)}</td>
-                    <td>
-                      <button
-                        className="btn ghost"
-                        type="button"
-                        onClick={() =>
-                          void runTx("Fill", () =>
-                            call("FillOrder", [o.id, fillAmt.trim() || "1000000"], o.side === "ask" ? `${fillAmt.trim() || "1000000"}ugnot` : ""),
-                          ).catch(() => {})
-                        }
-                      >
-                        {d.fill}
-                      </button>
-                      <button className="btn ghost" type="button" onClick={() => void runTx("Cancel", () => call("CancelOrder", [o.id])).catch(() => {})}>
-                        {d.cancelOrder}
-                      </button>
-                    </td>
+        {!orders.length ? (
+          <div className="book-empty">
+            <img className="empty-art" src="/empty-orders.jpg" alt="" />
+            <p className="muted">{d.emptyOrdersBody}</p>
+          </div>
+        ) : (
+          <>
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>id</th>
+                    <th>side</th>
+                    <th className="r">{d.give}</th>
+                    <th className="r">{d.want}</th>
+                    <th />
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-        <div className="fill-row">
-          <input type="number" placeholder="Fill amount" value={fillAmt} onChange={(e) => setFillAmt(e.target.value)} />
-        </div>
+                </thead>
+                <tbody>
+                  {orders.map((o) => (
+                    <tr key={o.id}>
+                      <td className="mono">{o.id}</td>
+                      <td className={`side-${o.side}`}>{o.side}</td>
+                      <td className="r">{fmtInt(o.giveAmt)}</td>
+                      <td className="r">{fmtInt(o.wantAmt)}</td>
+                      <td>
+                        <button
+                          className="btn ghost"
+                          type="button"
+                          onClick={() =>
+                            void runTx("Fill", () =>
+                              call("FillOrder", [o.id, fillAmt.trim() || "1000000"], o.side === "ask" ? `${fillAmt.trim() || "1000000"}ugnot` : ""),
+                            ).catch(() => {})
+                          }
+                        >
+                          {d.fill}
+                        </button>
+                        <button className="btn ghost" type="button" onClick={() => void runTx("Cancel", () => call("CancelOrder", [o.id])).catch(() => {})}>
+                          {d.cancelOrder}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="fill-row">
+              <input type="number" placeholder="Fill amount" value={fillAmt} onChange={(e) => setFillAmt(e.target.value)} />
+            </div>
+          </>
+        )}
       </div>
     </section>
   );

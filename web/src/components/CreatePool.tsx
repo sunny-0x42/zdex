@@ -98,6 +98,7 @@ export default function CreatePool() {
   return (
     <section className="narrow">
       <div className="card">
+        <img className="create-hero" src="/braid.jpg" alt="" />
         <p className="lede">{d.createHint}</p>
         <label>{d.tokenKeyLbl}</label>
         <div className="lookup-row">

@@ -12,6 +12,7 @@ export const NETWORKS = {
     pkg: "gno.land/r/zdex/v2",
     hubPkg: "gno.land/r/zdex",
     incentivesPkg: "gno.land/r/zdex/incentives/v1",
+    incentivesV2Pkg: "gno.land/r/zdex/incentives/v2",
     viewAddr: "g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5",
   },
   sapphire: {
@@ -34,6 +35,7 @@ export const NETWORKS = {
     faucet: "https://pearl.testnets.gno.land/faucet",
     pkg: "gno.land/r/g1mv0052e7r6s09f5t9xsqf00nj3tqsgt9dg52jr/zdex/v2",
     incentivesPkg: "gno.land/r/g1mv0052e7r6s09f5t9xsqf00nj3tqsgt9dg52jr/zdex/incentives/v1",
+    incentivesV2Pkg: "gno.land/r/g1mv0052e7r6s09f5t9xsqf00nj3tqsgt9dg52jr/zdex/incentives/v2",
     viewAddr: "g1mv0052e7r6s09f5t9xsqf00nj3tqsgt9dg52jr",
   },
 };

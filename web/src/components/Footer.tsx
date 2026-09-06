@@ -5,6 +5,10 @@ export default function Footer() {
   const faucet = live.faucet || net.faucet;
   return (
     <footer className="site-footer">
+      <span className="footer-brand">
+        <img src="/logo.jpg" width="22" height="22" alt="" />
+        zdex
+      </span>
       <nav className="footer-links">
         <button className="link" type="button" onClick={() => setTab("guide")}>
           {d.tab.guide}

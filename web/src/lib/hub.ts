@@ -21,6 +21,7 @@ export const FUNC_SURFACE: Record<string, string> = {
   SetNextPkg: "admin",
   SetModule: "admin",
   Fund: "incentives",
+  FundProgram: "incentives",
   Claim: "incentives",
   Sync: "incentives",
 };
@@ -96,6 +97,10 @@ export function pkgForSurface(live: Live | undefined, surface: string, fallback:
 export function pkgForFunc(live: Live | undefined, func: string, fallback: string, incentivesPkg = ""): string {
   const surface = FUNC_SURFACE[func] || "admin";
   if (surface === "incentives") {
+    if (func === "Fund" || func === "FundProgram") {
+      if (live?.incentivesV2Live && live.incentivesV2Pkg) return live.incentivesV2Pkg;
+      return live?.modules?.incentives || live?.incentivesPkg || incentivesPkg || "";
+    }
     return live?.modules?.incentives || live?.incentivesPkg || incentivesPkg || "";
   }
   return pkgForSurface(live, surface, fallback);

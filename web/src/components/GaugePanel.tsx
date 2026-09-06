@@ -4,10 +4,12 @@ import { fmtApr, gaugeBoostPct, lpFeeAprPct, rewardAprPct } from "../lib/amm";
 import { fmtGnot, fmtInt, toUgnot } from "../lib/format";
 import { gaugeFor, incentivesEnabled, isIncentivized } from "../lib/hub";
 import type { Pool } from "../types";
+import TokenAvatar from "./TokenAvatar";
 
 export default function GaugePanel({ pool }: { pool: Pool | null }) {
   const { net, live, wallet, account, previewing, busy, runTx, call, d } = useDex();
   const [amt, setAmt] = useState("1");
+  const [days, setDays] = useState("7");
   if (!incentivesEnabled(net, live.caps)) return null;
 
   const gauge = pool ? gaugeFor(live, pool.id) : undefined;
@@ -64,7 +66,10 @@ export default function GaugePanel({ pool }: { pool: Pool | null }) {
           {funded ? (
             <div>
               <span>{d.gaugeFunded}</span>
-              <b>{fmtGnot(gauge!.totalFunded)} GNOT</b>
+              <b className="amt-chip">
+                <TokenAvatar symbol="GNOT" size={16} />
+                {fmtGnot(gauge!.totalFunded)} GNOT
+              </b>
             </div>
           ) : null}
         </div>
@@ -75,20 +80,49 @@ export default function GaugePanel({ pool }: { pool: Pool | null }) {
       <label>{d.fundAmt}</label>
       <input type="number" min="1" step="any" value={amt} onChange={(e) => setAmt(e.target.value)} />
       <p className="hint">{d.minFund}</p>
-      <button
-        className="btn primary wide"
-        type="button"
-        disabled={!!busy || !fundOk}
-        onClick={() => void runTx("Fund", () => call("Fund", [pool!.id], `${u.toString()}ugnot`)).catch(() => {})}
-      >
-        {busy || d.fundGauge}
-      </button>
+      {live.incentivesV2Live ? (
+        <>
+          <label>{d.programDays}</label>
+          <select value={days} onChange={(e) => setDays(e.target.value)}>
+            <option value="1">{d.day1}</option>
+            <option value="7">{d.day7}</option>
+          </select>
+          <button
+            className="btn primary wide"
+            type="button"
+            disabled={!!busy || !fundOk}
+            onClick={() =>
+              void runTx("FundProgram", () =>
+                call("FundProgram", [pool!.id, days === "1" ? "28800" : "201600"], `${u.toString()}ugnot`),
+              ).catch(() => {})
+            }
+          >
+            {busy || d.fundProgram}
+          </button>
+        </>
+      ) : (
+        <button
+          className="btn primary wide"
+          type="button"
+          disabled={!!busy || !fundOk}
+          onClick={() => void runTx("Fund", () => call("Fund", [pool!.id], `${u.toString()}ugnot`)).catch(() => {})}
+        >
+          {busy || d.fundGauge}
+        </button>
+      )}
       {claimN > 0n ? (
         <button
           className="btn ghost wide"
           type="button"
           disabled={!!busy || !pool || !canSign}
-          onClick={() => void runTx("Claim", () => call("Claim", [pool!.id])).catch(() => {})}
+          onClick={() =>
+            void runTx("Claim", async () => {
+              const rows = (live.gauges || []).filter((g) => g.id === pool!.id);
+              let last = await call("Claim", [pool!.id], "", rows[0]?.pkg || "");
+              for (const g of rows.slice(1)) last = await call("Claim", [pool!.id], "", g.pkg || "");
+              return last;
+            }).catch(() => {})
+          }
         >
           {d.claimIncentive} · {fmtGnot(claimN)} GNOT
         </button>
@@ -97,7 +131,9 @@ export default function GaugePanel({ pool }: { pool: Pool | null }) {
           className="btn ghost wide"
           type="button"
           disabled={!!busy || !pool || !canSign}
-          onClick={() => void runTx("Sync", () => call("Sync", [pool!.id])).catch(() => {})}
+          onClick={() =>
+            void runTx("Sync", () => call("Sync", [pool!.id], "", gauge?.pkg || "")).catch(() => {})
+          }
         >
           {d.syncGauge}
         </button>

@@ -6,6 +6,7 @@ import { api } from "../lib/api";
 import { UGNOT, fmtGnot, fmtInt, parseUgnot, toUgnot } from "../lib/format";
 import Featured from "./Featured";
 import Spark from "./Spark";
+import TokenAvatar, { TokenChip } from "./TokenAvatar";
 
 type Preflight = {
   ok: boolean;
@@ -144,6 +145,7 @@ export default function Swap() {
   if (!pools.length) {
     return (
       <div className="card empty-card">
+        <img className="empty-art" src="/empty-pools.jpg" alt="" />
         <h2>{d.noPoolsYet}</h2>
         <p className="muted">{d.emptyPoolsBody}</p>
         <div className="empty-actions">
@@ -207,10 +209,13 @@ export default function Swap() {
           </div>
           <div className="token-row">
             <input type="number" min="0" step="any" value={exactOut && exactOk ? quote?.inDisplay || "" : amountIn} readOnly={exactOut && exactOk} onChange={(e) => setAmountIn(e.target.value)} />
-            <select value={tokenIn} onChange={(e) => setTokenIn(e.target.value)}>
-              <option value="ugnot">GNOT</option>
-              {pool ? <option value={pool.symbol}>{pool.symbol}</option> : null}
-            </select>
+            <div className="token-pick">
+              <TokenAvatar symbol={tokenIn === "ugnot" ? "GNOT" : pool?.symbol || "token"} size={20} />
+              <select value={tokenIn} onChange={(e) => setTokenIn(e.target.value)}>
+                <option value="ugnot">GNOT</option>
+                {pool ? <option value={pool.symbol}>{pool.symbol}</option> : null}
+              </select>
+            </div>
           </div>
           <p className="hint">{tokenIn === "ugnot" ? `GNOT ${fmtGnot(quote?.bal || 0n)}` : `${fmtInt(quote?.bal || 0n)} ${pool?.symbol || ""}`}</p>
         </div>
@@ -226,7 +231,7 @@ export default function Swap() {
           </div>
           <div className="token-row">
             <input type="text" placeholder="0" value={exactOut && exactOk ? amountOut : quote?.outDisplay || ""} readOnly={!(exactOut && exactOk)} onChange={(e) => setAmountOut(e.target.value)} />
-            <div className="token-chip">{outSym}</div>
+            <TokenChip symbol={outSym} />
           </div>
         </div>
 

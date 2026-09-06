@@ -31,7 +31,7 @@ export default function Header() {
   return (
     <header className="top">
       <button className="brand" type="button" onClick={() => setTab("swap")} aria-label="zdex">
-        <div className="logo">z</div>
+        <img className="logo-img" src="/logo.jpg" width="30" height="30" alt="" />
         <div className="brand-name">
           z<span>dex</span>
         </div>
