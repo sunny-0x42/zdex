@@ -20,7 +20,7 @@ export default function Ticker() {
       <span className="tick" key={p.id}>
         <span>{p.symbol}</span>
         <b className={now >= prev ? "up" : "dn"}>{fmtInt(p.quote1gnot)}</b>
-        <img className="tick-ico" src="/token-gnot.jpg" alt="" width={12} height={12} />
+        <img className="tick-ico" src="/tokens/gnot.svg" alt="" width={12} height={12} />
         <span>GNOT</span>
       </span>
     );

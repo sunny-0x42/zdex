@@ -6,7 +6,7 @@ import { fmtGnot, fmtInt, toTokenBase, toUgnot, tokenPkgFromKey } from "../lib/f
 import { isIncentivized } from "../lib/hub";
 import type { ChainToken, Pool } from "../types";
 import GaugePanel from "./GaugePanel";
-import { TokenChip } from "./TokenAvatar";
+import { PairAvatars, TokenChip } from "./TokenAvatar";
 
 function poolStatus(p: Pool, height: number, d: { lpLocked: string; noLpSeed: string; canAdd: string }) {
   if (Number(p.totalLP) <= 0) return { ok: false, label: d.noLpSeed };
@@ -291,7 +291,7 @@ export default function Liquidity() {
                 }}
               >
                 <div className="mkt-top">
-                  <div className="tok-av">{(row.symbol || "?").slice(0, 2).toUpperCase()}</div>
+                  <PairAvatars symbol={row.symbol || "?"} size={28} />
                   <div>
                     <b>{row.symbol}/GNOT</b>
                     <div className="muted">{row.name}</div>

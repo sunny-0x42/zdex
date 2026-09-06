@@ -340,7 +340,15 @@ input:focus-visible, select:focus-visible { outline: 2px solid var(--accent-bord
   background: var(--accent-soft); color: var(--accent-2);
   flex-shrink: 0;
 }
-.tok-av-img { object-fit: cover; padding: 0; background: none; }
+.tok-av-img { object-fit: contain; padding: 0; background: #141414; }
+.tok-av-gnot { padding: 18%; background: #111; }
+.tok-av-letters {
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+  line-height: 1;
+  overflow: hidden;
+  padding: 0 2px;
+}
 .pair-stack { display: flex; align-items: center; }
 .pair-stack .tok-av:last-child {
   margin-left: -11px;

@@ -1,18 +1,35 @@
-const ICONS: Record<string, string> = {
-  GNOT: "/token-gnot.jpg",
-  UGNOT: "/token-gnot.jpg",
-  ZDEX: "/token-zdex.jpg",
-};
+import { tokenHue, tokenIconSrc, tokenInitials } from "../lib/tokenIcons";
 
 export default function TokenAvatar({ symbol, size = 36 }: { symbol: string; size?: number }) {
-  const s = (symbol || "?").toUpperCase();
-  const src = ICONS[s];
+  const src = tokenIconSrc(symbol);
+  const gnot = /^(ugnot|gnot)$/i.test(symbol || "");
   if (src) {
-    return <img className="tok-av tok-av-img" src={src} alt="" width={size} height={size} />;
+    return (
+      <img
+        className={`tok-av tok-av-img${gnot ? " tok-av-gnot" : ""}`}
+        src={src}
+        alt=""
+        width={size}
+        height={size}
+      />
+    );
   }
+  const label = tokenInitials(symbol);
+  const hue = tokenHue(symbol);
+  const fs = Math.max(8, Math.min(size * (label.length > 3 ? 0.28 : 0.34), 14));
   return (
-    <div className="tok-av" style={{ width: size, height: size, fontSize: Math.max(10, size * 0.34) }}>
-      {s.slice(0, 2)}
+    <div
+      className="tok-av tok-av-letters"
+      style={{
+        width: size,
+        height: size,
+        fontSize: fs,
+        background: `hsl(${hue} 38% 22%)`,
+        color: `hsl(${hue} 70% 82%)`,
+      }}
+      title={symbol}
+    >
+      {label}
     </div>
   );
 }
