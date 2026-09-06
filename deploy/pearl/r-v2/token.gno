@@ -65,10 +65,12 @@ func pullUserToken(_ int, rlm realm, symbol string, from address, amount int64) 
 	require(from == rlm.Previous().Address(), "zdex: from must be caller")
 	rec := tryTok(symbol)
 	if rec != nil {
-		checkErr(rec.token.CallerTeller().Transfer(0, rlm, thisAddr(), amount))
+		checkErr(rec.ledger.CallerTeller().Transfer(0, rlm, thisAddr(), amount))
 		return
 	}
-	grc20reg.TransferFrom(cross(rlm), symbol, from, thisAddr(), amount)
+	// Pearl grc20reg write wrappers are non-crossing: rlm must be this
+	// realm's live cur. cross() would debit the registry instead.
+	grc20reg.TransferFrom(0, rlm, symbol, from, thisAddr(), amount)
 }
 
 func pushToken(_ int, rlm realm, symbol string, to address, amount int64) {
@@ -81,7 +83,7 @@ func pushToken(_ int, rlm realm, symbol string, to address, amount int64) {
 		checkErr(rec.ledger.Transfer(thisAddr(), to, amount))
 		return
 	}
-	grc20reg.Transfer(cross(rlm), symbol, to, amount)
+	grc20reg.Transfer(0, rlm, symbol, to, amount)
 }
 
 func tokenBalance(symbol string, owner address) int64 {
@@ -100,17 +102,17 @@ func tokenBalance(symbol string, owner address) int64 {
 // on their own realm.
 func Transfer(cur realm, symbol string, to address, amount int64) {
 	rec := getTok(symbol)
-	checkErr(rec.token.CallerTeller().Transfer(0, cur, to, amount))
+	checkErr(rec.ledger.CallerTeller().Transfer(0, cur, to, amount))
 }
 
 func Approve(cur realm, symbol string, spender address, amount int64) {
 	rec := getTok(symbol)
-	checkErr(rec.token.CallerTeller().Approve(0, cur, spender, amount))
+	checkErr(rec.ledger.CallerTeller().Approve(0, cur, spender, amount))
 }
 
 func TransferFrom(cur realm, symbol string, from, to address, amount int64) {
 	rec := getTok(symbol)
-	checkErr(rec.token.CallerTeller().TransferFrom(0, cur, from, to, amount))
+	checkErr(rec.ledger.CallerTeller().TransferFrom(0, cur, from, to, amount))
 }
 
 func BalanceOf(symbol string, owner address) int64 {

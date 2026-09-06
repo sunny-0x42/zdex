@@ -25,21 +25,30 @@ This tree is rewritten for Pearl namespace rules. Local source stays on
 
 `r-v2/math.gno` already imports the AMM path above.
 
+## Pearl GRC20 (do not copy local token.gno blindly)
+
+Pearl `gno.land/p/demo/tokens/grc20` hangs `CallerTeller()` on `*PrivateLedger`, not `*Token`.
+Pearl `grc20reg.Transfer` / `TransferFrom` are **non-crossing**:
+
+```
+grc20reg.TransferFrom(0, rlm, key, from, to, amt)
+grc20reg.Transfer(0, rlm, key, to, amt)
+```
+
+`cross(rlm)` here would debit the registry. Local GNOROOT still has the older Token.CallerTeller API — keep that in `gno.land/r/zdex/v2`. Only `deploy/pearl/r-v2/token.gno` is Pearl-shaped.
+
 ## Sign it yourself
 
 Do **not** paste a seed or password into chat, files, or CI.
 
-Unlock the key that already lives in *your* gnokey keystore, then:
+Key name for `g1mv0052…` on this machine is `deploykey`. AMM must be **on-chain** before the realm typechecks.
 
 ```
 cd C:\Users\Hi\zdex
-.\deploy\pearl\addpkg.ps1 -KeyName <YOUR_GNOKEY_NAME>
-```
-
-That simulates both packages. When the dry-run looks right:
-
-```
-.\deploy\pearl\addpkg.ps1 -KeyName <YOUR_GNOKEY_NAME> -Broadcast
+.\deploy\pearl\addpkg.ps1 -KeyName deploykey -Stage Amm
+.\deploy\pearl\addpkg.ps1 -KeyName deploykey -Stage Amm -Broadcast
+.\deploy\pearl\addpkg.ps1 -KeyName deploykey -Stage Realm
+.\deploy\pearl\addpkg.ps1 -KeyName deploykey -Stage Realm -Broadcast
 ```
 
 Equivalent commands (replace `KEYNAME`):
