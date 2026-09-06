@@ -20,6 +20,7 @@ export default function GaugePanel({ pool }: { pool: Pool | null }) {
   const u = toUgnot(amt);
   const canSign = Boolean(account && account.source === "adena" && !previewing);
   const funded = Boolean(gauge?.totalFunded && gauge.totalFunded !== "0");
+  const fundOk = Boolean(pool && canSign && u >= 1_000_000n);
 
   return (
     <div className="card">
@@ -40,12 +41,15 @@ export default function GaugePanel({ pool }: { pool: Pool | null }) {
         </p>
       ) : null}
       {gauge?.paused ? <p className="hint">{d.gaugePaused}</p> : null}
+      {!pool ? <p className="hint">{d.pickPoolFirst}</p> : null}
+      {!canSign ? <p className="hint">{d.connectToSign}</p> : null}
       <label>{d.fundAmt}</label>
-      <input type="number" min="0" step="any" value={amt} onChange={(e) => setAmt(e.target.value)} />
+      <input type="number" min="1" step="any" value={amt} onChange={(e) => setAmt(e.target.value)} />
+      <p className="hint">{d.minFund}</p>
       <button
         className="btn primary wide"
         type="button"
-        disabled={!!busy || !pool || u <= 0n || !canSign}
+        disabled={!!busy || !fundOk}
         onClick={() => void runTx("Fund", () => call("Fund", [pool!.id], `${u.toString()}ugnot`)).catch(() => {})}
       >
         {busy || d.fundGauge}

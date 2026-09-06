@@ -40,5 +40,8 @@ describe("copy", () => {
     expect(copy.guide.banner).toMatch(/no value/i);
     expect(copy.guide.banner).toMatch(/not financial advice/i);
     expect(copy.pageSub.pools).not.toMatch(/APR/i);
+    expect(copy.incentivize).toBe("Incentivize");
+    expect(copy.minFund).toMatch(/1 GNOT/);
+    expect(copy.createThenFund).toMatch(/Fund a gauge/i);
   });
 });

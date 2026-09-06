@@ -52,6 +52,16 @@ export default function Markets() {
             >
               {d.canAdd}
             </button>
+            <button
+              className="btn ghost sm"
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                addLp(p.id);
+              }}
+            >
+              {d.incentivize}
+            </button>
           </article>
         ))}
       </div>
@@ -89,6 +99,9 @@ export default function Markets() {
                   <td className="r">
                     <button className="btn sm" type="button" onClick={() => addLp(p.id)}>
                       {d.canAdd}
+                    </button>
+                    <button className="btn ghost sm" type="button" onClick={() => addLp(p.id)}>
+                      {d.incentivize}
                     </button>
                   </td>
                 </tr>

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useDex } from "../context";
 import { lpFeeAprPct, mulDiv } from "../lib/amm";
 import { api } from "../lib/api";
-import { fmtGnot, fmtInt, toUgnot } from "../lib/format";
+import { fmtGnot, fmtInt, toTokenBase, toUgnot, tokenPkgFromKey } from "../lib/format";
 import { isIncentivized } from "../lib/hub";
 import type { ChainToken, Pool } from "../types";
 import GaugePanel from "./GaugePanel";
@@ -17,7 +17,6 @@ export default function Liquidity() {
   const { pools, pool, setPoolId, wallet, walletAddr, busy, runTx, call, d, live, netId, pkg } = useDex();
   const [catalog, setCatalog] = useState<ChainToken[]>([]);
   const [realmAddr, setRealmAddr] = useState("");
-  const [registry, setRegistry] = useState("gno.land/r/demo/defi/grc20reg");
   const [pick, setPick] = useState(pool?.symbol || "");
   const [custom, setCustom] = useState("");
   const [resolved, setResolved] = useState<ChainToken | null>(null);
@@ -45,7 +44,6 @@ export default function Liquidity() {
         if (!on) return;
         setCatalog(j.tokens || []);
         if (j.realmAddr) setRealmAddr(j.realmAddr);
-        if (j.registry) setRegistry(j.registry);
       })
       .catch(() => {
         /* pools fallback */
@@ -112,9 +110,12 @@ export default function Liquidity() {
   }
 
   async function approve() {
-    if (!resolved || resolved.internal || !realmAddr) return;
-    const amt = isNew ? tokenAmt.trim() : maxToken;
-    await runTx("Approve", () => call("Approve", [resolved.key || resolved.symbol, realmAddr, amt || "0"], "", registry));
+    if (!resolved || resolved.internal) return;
+    const spender = realmAddr || live.viewAddr || "";
+    const pkgPath = tokenPkgFromKey(resolved.key);
+    const amt = isNew ? toTokenBase(tokenAmt, resolved.decimals || 0).toString() : maxToken;
+    if (!spender || !pkgPath) throw new Error(d.approveNeedPkg);
+    await runTx("Approve", () => call("Approve", [spender, amt || "0"], "", pkgPath));
   }
 
   async function add() {
@@ -125,8 +126,9 @@ export default function Liquidity() {
     }
     if (isNew) {
       const key = resolved.key || resolved.symbol;
+      const tAmt = toTokenBase(tokenAmt, resolved.decimals || 0).toString();
       await runTx("CreatePool", () =>
-        call("CreatePool", [key, resolved.symbol, u.toString(), tokenAmt.trim(), feeBps], `${u.toString()}ugnot`),
+        call("CreatePool", [key, resolved.symbol, u.toString(), tAmt, feeBps], `${u.toString()}ugnot`),
       );
     }
   }
@@ -223,7 +225,12 @@ export default function Liquidity() {
           <p className="hint">{resolved ? (isNew ? d.newPair : d.existingPair) : d.pasteHint}</p>
           <p className="hint">{hint}</p>
           {resolved && !resolved.internal ? (
-            <button className="btn ghost wide" type="button" disabled={!!busy || !realmAddr} onClick={() => void approve().catch(() => {})}>
+            <button
+              className="btn ghost wide"
+              type="button"
+              disabled={!!busy || !(realmAddr || live.viewAddr) || !tokenPkgFromKey(resolved.key)}
+              onClick={() => void approve().catch(() => {})}
+            >
               {d.approveFirst}
             </button>
           ) : null}
