@@ -14,3 +14,6 @@ web/deploy-error.txt
 .vscode/
 .idea/
 .grok/
+
+# Local Netlify folder
+.netlify
