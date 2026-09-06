@@ -3,6 +3,7 @@ import { useDex } from "../context";
 import { api } from "../lib/api";
 import { toTokenBase, toUgnot, tokenPkgFromKey } from "../lib/format";
 import type { ChainToken } from "../types";
+import { TokenChip } from "./TokenAvatar";
 
 export default function CreatePool() {
   const { busy, runTx, call, setTab, addLp, d, netId, walletAddr, account, previewing, pkg } = useDex();
@@ -98,7 +99,6 @@ export default function CreatePool() {
   return (
     <section className="narrow">
       <div className="card">
-        <img className="create-hero" src="/braid.jpg" alt="" />
         <p className="lede">{d.createHint}</p>
         <label>{d.tokenKeyLbl}</label>
         <div className="lookup-row">
@@ -127,17 +127,27 @@ export default function CreatePool() {
         ) : (
           <p className="hint">{d.createLookupFirst}</p>
         )}
-        <div className="pair">
-          <div>
-            <label>{d.gnotIn}</label>
-            <input type="number" min="1" step="any" value={gnot} onChange={(e) => setGnot(e.target.value)} />
+        <div className="swap-stack">
+          <div className="swap-panel">
+            <div className="swap-panel-top">
+              <span>{d.gnotIn}</span>
+            </div>
+            <div className="swap-panel-row">
+              <input className="swap-amt" type="number" min="1" step="any" value={gnot} onChange={(e) => setGnot(e.target.value)} />
+              <TokenChip symbol="GNOT" />
+            </div>
           </div>
-          <div>
-            <label>
-              {d.tokenAmt}
-              {resolved ? ` (${resolved.symbol})` : ""}
-            </label>
-            <input type="number" min="0" step="any" value={tokenAmt} onChange={(e) => setTokenAmt(e.target.value)} />
+          <div className="swap-panel">
+            <div className="swap-panel-top">
+              <span>
+                {d.tokenAmt}
+                {resolved ? ` (${resolved.symbol})` : ""}
+              </span>
+            </div>
+            <div className="swap-panel-row">
+              <input className="swap-amt" type="number" min="0" step="any" value={tokenAmt} onChange={(e) => setTokenAmt(e.target.value)} />
+              {resolved ? <TokenChip symbol={resolved.symbol} /> : null}
+            </div>
           </div>
         </div>
         <label>{d.feeTier}</label>

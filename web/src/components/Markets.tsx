@@ -11,7 +11,6 @@ export default function Markets() {
   if (!pools.length) {
     return (
       <div className="card empty-card">
-        <img className="empty-art" src="/empty-pools.jpg" alt="" />
         <h2>{d.noPoolsYet}</h2>
         <p className="muted">{d.emptyPoolsBody}</p>
         <div className="empty-actions">

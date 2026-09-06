@@ -48,7 +48,6 @@ export default function Stats() {
 
   return (
     <section>
-      <img className="create-hero slim" src="/hero-wide.jpg" alt="" />
       <div className="kpis">
         <div>
           <span>{d.tvl}</span>

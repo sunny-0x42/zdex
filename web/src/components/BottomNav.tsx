@@ -1,10 +1,12 @@
 import { useDex } from "../context";
+import { MOBILE_TABS } from "../lib/hub";
 
 export default function BottomNav() {
   const { TABS, tab, setTab, d } = useDex();
+  const items = TABS.filter((name) => MOBILE_TABS.includes(name));
   return (
     <nav className="bottom-nav" aria-label="Primary">
-      {TABS.map((name) => (
+      {items.map((name) => (
         <button
           key={name}
           className={`nav-btn${tab === name || (name === "pools" && tab === "create") ? " on" : ""}`}

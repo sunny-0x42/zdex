@@ -4,9 +4,7 @@ import { errText } from "../i18n";
 import { mulDiv, quoteInLocal, quoteLocal } from "../lib/amm";
 import { api } from "../lib/api";
 import { UGNOT, fmtGnot, fmtInt, parseUgnot, toUgnot } from "../lib/format";
-import Featured from "./Featured";
-import Spark from "./Spark";
-import TokenAvatar, { TokenChip } from "./TokenAvatar";
+import TokenAvatar from "./TokenAvatar";
 
 type Preflight = {
   ok: boolean;
@@ -15,24 +13,30 @@ type Preflight = {
   errors: string[];
 };
 
+type PickSide = "in" | "out" | null;
+
 export default function Swap() {
   const { live, pool, pools, setPoolId, setTab, wallet, walletAddr, busy, runTx, call, deadline, toast, d, netId } = useDex();
   const [tokenIn, setTokenIn] = useState("ugnot");
-  const [amountIn, setAmountIn] = useState("1");
+  const [amountIn, setAmountIn] = useState("");
   const [amountOut, setAmountOut] = useState("");
   const [slippage, setSlippage] = useState("100");
   const [exactOut, setExactOut] = useState(false);
   const [chainOut, setChainOut] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<Preflight | null>(null);
+  const [settings, setSettings] = useState(false);
+  const [details, setDetails] = useState(false);
+  const [pick, setPick] = useState<PickSide>(null);
 
   const outSym = tokenIn === "ugnot" ? pool?.symbol || "token" : "GNOT";
+  const inSym = tokenIn === "ugnot" ? "GNOT" : pool?.symbol || "token";
   const exactOk = !!live.caps?.exactOut;
 
   const quote = useMemo(() => {
     if (!pool) return null;
     const slip = BigInt(slippage || 100);
     const feeTxt = `${pool.feeBps / 100}%`;
-    const spot = `${fmtInt(pool.quote1gnot)} ${pool.symbol} / GNOT`;
+    const spot = `1 GNOT = ${fmtInt(pool.quote1gnot)} ${pool.symbol}`;
     const bal = tokenIn === "ugnot" ? parseUgnot(wallet.coins) : BigInt(wallet.balances?.[pool.symbol] || 0);
     if (exactOut && exactOk) {
       const raw = String(amountOut || "0").replace(/,/g, "");
@@ -112,6 +116,17 @@ export default function Swap() {
       ? Number(quote.out - quote.localOut) / Number(quote.localOut)
       : 0;
 
+  function chooseToken(symbol: string, poolId?: string) {
+    if (poolId) setPoolId(poolId);
+    if (pick === "in") {
+      setTokenIn(symbol === "GNOT" ? "ugnot" : symbol);
+    } else if (pick === "out") {
+      setTokenIn(symbol === "GNOT" ? (pool?.symbol || "ugnot") : "ugnot");
+      if (symbol !== "GNOT" && poolId) setPoolId(poolId);
+    }
+    setPick(null);
+  }
+
   async function openConfirm() {
     if (!pool || !quote) return toast(d.noPool, "err");
     try {
@@ -145,7 +160,6 @@ export default function Swap() {
   if (!pools.length) {
     return (
       <div className="card empty-card">
-        <img className="empty-art" src="/empty-pools.jpg" alt="" />
         <h2>{d.noPoolsYet}</h2>
         <p className="muted">{d.emptyPoolsBody}</p>
         <div className="empty-actions">
@@ -160,148 +174,180 @@ export default function Swap() {
     );
   }
 
+  const cta = !walletAddr ? d.connect : busy || d.swap;
+
   return (
-    <section className="grid swap-layout">
-      <div className="card swap-card">
-        <div className="card-head">
+    <section className="swap-shell">
+      <div className="card swap-card uniswap">
+        <div className="swap-toolbar">
           <h2>{d.swap}</h2>
-          {exactOk ? (
-            <label className="slip">
-              <input type="checkbox" checked={exactOut} onChange={(e) => setExactOut(e.target.checked)} /> {d.exactOut}
-            </label>
-          ) : null}
-          <label className="slip">
-            {d.slippage}
-            <select value={slippage} onChange={(e) => setSlippage(e.target.value)}>
-              <option value="50">0.5%</option>
-              <option value="100">1%</option>
-              <option value="200">2%</option>
-            </select>
-          </label>
+          <button className="icon-btn" type="button" aria-label={d.settings} onClick={() => setSettings((v) => !v)}>
+            ⚙
+          </button>
         </div>
-        <label>{d.pool}</label>
-        <select value={pool?.id || ""} onChange={(e) => setPoolId(e.target.value)}>
-          {pools.length ? (
-            pools.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.symbol} / GNOT
-              </option>
-            ))
-          ) : (
-            <option value="">{d.noPool}</option>
-          )}
-        </select>
-
-        <div className="token-box">
-          <div className="token-row">
-            <span className="muted">{d.youPay}</span>
-            <button
-              className="link"
-              type="button"
-              onClick={() => {
-                if (!quote) return;
-                setAmountIn(tokenIn === "ugnot" ? fmtGnot(quote.bal).replace(/,/g, "") : quote.bal.toString());
-                setExactOut(false);
-              }}
-            >
-              {d.max}
-            </button>
+        {settings ? (
+          <div className="swap-settings">
+            <span>{d.slippage}</span>
+            {(["50", "100", "200"] as const).map((v) => (
+              <button key={v} className={`chip${slippage === v ? " on" : ""}`} type="button" onClick={() => setSlippage(v)}>
+                {Number(v) / 100}%
+              </button>
+            ))}
+            {exactOk ? (
+              <label className="slip">
+                <input type="checkbox" checked={exactOut} onChange={(e) => setExactOut(e.target.checked)} /> {d.exactOut}
+              </label>
+            ) : null}
           </div>
-          <div className="token-row">
-            <input type="number" min="0" step="any" value={exactOut && exactOk ? quote?.inDisplay || "" : amountIn} readOnly={exactOut && exactOk} onChange={(e) => setAmountIn(e.target.value)} />
-            <div className="token-pick">
-              <TokenAvatar symbol={tokenIn === "ugnot" ? "GNOT" : pool?.symbol || "token"} size={20} />
-              <select value={tokenIn} onChange={(e) => setTokenIn(e.target.value)}>
-                <option value="ugnot">GNOT</option>
-                {pool ? <option value={pool.symbol}>{pool.symbol}</option> : null}
-              </select>
+        ) : null}
+
+        <div className="swap-stack">
+          <div className="swap-panel">
+            <div className="swap-panel-top">
+              <span>{d.sell}</span>
+              <button
+                className="link"
+                type="button"
+                onClick={() => {
+                  if (!quote) return;
+                  setAmountIn(tokenIn === "ugnot" ? fmtGnot(quote.bal).replace(/,/g, "") : quote.bal.toString());
+                  setExactOut(false);
+                }}
+              >
+                {d.max}
+              </button>
+            </div>
+            <div className="swap-panel-row">
+              <input
+                className="swap-amt"
+                type="number"
+                min="0"
+                step="any"
+                placeholder="0"
+                value={exactOut && exactOk ? quote?.inDisplay || "" : amountIn}
+                readOnly={exactOut && exactOk}
+                onChange={(e) => setAmountIn(e.target.value)}
+              />
+              <button className="token-pill" type="button" onClick={() => setPick("in")}>
+                <TokenAvatar symbol={inSym} size={24} />
+                {inSym}
+                <span className="caret">▾</span>
+              </button>
+            </div>
+            <div className="swap-bal">
+              {d.balance} {tokenIn === "ugnot" ? fmtGnot(quote?.bal || 0n) : fmtInt(quote?.bal || 0n)} {inSym}
             </div>
           </div>
-          <p className="hint">{tokenIn === "ugnot" ? `GNOT ${fmtGnot(quote?.bal || 0n)}` : `${fmtInt(quote?.bal || 0n)} ${pool?.symbol || ""}`}</p>
+
+          <button
+            className="flip-mid"
+            type="button"
+            aria-label="flip"
+            onClick={() => pool && setTokenIn(tokenIn === "ugnot" ? pool.symbol : "ugnot")}
+          >
+            ↓
+          </button>
+
+          <div className="swap-panel">
+            <div className="swap-panel-top">
+              <span>{d.buy}</span>
+            </div>
+            <div className="swap-panel-row">
+              <input
+                className="swap-amt"
+                type="text"
+                placeholder="0"
+                value={exactOut && exactOk ? amountOut : quote?.outDisplay || ""}
+                readOnly={!(exactOut && exactOk)}
+                onChange={(e) => setAmountOut(e.target.value)}
+              />
+              <button className="token-pill" type="button" onClick={() => setPick("out")}>
+                <TokenAvatar symbol={outSym} size={24} />
+                {outSym}
+                <span className="caret">▾</span>
+              </button>
+            </div>
+          </div>
         </div>
 
-        <button className="flip" type="button" aria-label="flip" onClick={() => pool && setTokenIn(tokenIn === "ugnot" ? pool.symbol : "ugnot")}>
-          ⇅
+        <button
+          className="btn primary swap-cta"
+          type="button"
+          disabled={!!busy || !pool || (Boolean(walletAddr) && !(quote && quote.inn > 0n))}
+          onClick={() => void openConfirm()}
+        >
+          {cta}
         </button>
 
-        <div className="token-box">
-          <div className="token-row">
-            <span className="muted">{d.youReceive}</span>
-            <span className="muted">{outSym}</span>
-          </div>
-          <div className="token-row">
-            <input type="text" placeholder="0" value={exactOut && exactOk ? amountOut : quote?.outDisplay || ""} readOnly={!(exactOut && exactOk)} onChange={(e) => setAmountOut(e.target.value)} />
-            <TokenChip symbol={outSym} />
-          </div>
-        </div>
-
-        <div className="quote">
-          <div>
-            <span>{d.price}</span>
-            <b>{quote?.spot || "—"}</b>
-          </div>
-          <div>
-            <span>{d.impact}</span>
-            <b className={quote?.impactCls}>{quote?.impact || "—"}</b>
-          </div>
-          <div>
-            <span>{d.minOut}</span>
-            <b className="mono">{quote?.slipHint || "—"}</b>
-          </div>
-          <div>
-            <span>{d.fee}</span>
-            <b>{quote?.feeTxt || "—"}</b>
-          </div>
-        </div>
-        {Math.abs(diverge) > 0.01 ? <p className="hint">{d.diverge}</p> : null}
-        <p className="hint">{d.swapHint}</p>
-        <button className="btn primary wide" type="button" disabled={!!busy || !pool} onClick={() => void openConfirm()}>
-          {busy || d.swap}
+        <button className="details-toggle" type="button" onClick={() => setDetails((v) => !v)}>
+          <span>{quote?.spot || d.price}</span>
+          <span>{details ? "▴" : "▾"}</span>
         </button>
-      </div>
-
-      <div className="stack">
-        <Featured />
-        <div className="card">
-          <div className="card-head">
-            <h2>{pool ? `${pool.symbol} / GNOT` : d.market}</h2>
-            {pool ? <span className="pill">{pool.feeBps / 100}%</span> : null}
-          </div>
-          <Spark values={pool?.spark || []} />
-          <div className="stats">
+        {details ? (
+          <div className="quote">
             <div>
-              <span>{d.gnotPer}</span>
-              <b>{pool ? `${fmtInt(pool.quote1gnot)} ${pool.symbol}` : "—"}</b>
+              <span>{d.impact}</span>
+              <b className={quote?.impactCls}>{quote?.impact || "—"}</b>
             </div>
             <div>
-              <span>{d.reserveGnot}</span>
-              <b>{pool ? fmtGnot(pool.reserveU) : "—"}</b>
+              <span>{d.minOut}</span>
+              <b className="mono">{quote?.slipHint || "—"}</b>
             </div>
             <div>
-              <span>{d.reserveToken}</span>
-              <b>{pool ? fmtInt(pool.reserveT) : "—"}</b>
+              <span>{d.fee}</span>
+              <b>{quote?.feeTxt || "—"}</b>
             </div>
             <div>
-              <span>{d.volume}</span>
-              <b>{pool ? `${fmtGnot(pool.volumeU || "0")} GNOT` : "—"}</b>
+              <span>{d.slippage}</span>
+              <b>{Number(slippage) / 100}%</b>
             </div>
-            {pool && Number(pool.virtualU) > 0 ? (
+            {pool ? (
               <div>
-                <span>{d.virtual}</span>
-                <b>{fmtGnot(pool.virtualU)}</b>
+                <span>TVL</span>
+                <b>{fmtGnot(pool.reserveU)} GNOT</b>
               </div>
             ) : null}
           </div>
-          {bits.length ? <p className="hint">{bits.join(" · ")}</p> : null}
-        </div>
+        ) : null}
+        {Math.abs(diverge) > 0.01 ? <p className="hint">{d.diverge}</p> : null}
+        {bits.length ? <p className="hint">{bits.join(" · ")}</p> : null}
       </div>
+
+      {pick ? (
+        <div className="modal" onClick={() => setPick(null)}>
+          <div className="card modal-card" onClick={(e) => e.stopPropagation()}>
+            <h2>{d.selectToken}</h2>
+            <div className="token-list">
+              <button type="button" onClick={() => chooseToken("GNOT", pool?.id)}>
+                <TokenAvatar symbol="GNOT" size={32} />
+                <span>
+                  <b>GNOT</b>
+                  <div className="muted">Native</div>
+                </span>
+              </button>
+              {pools.map((p) => (
+                <button key={p.id} type="button" onClick={() => chooseToken(p.symbol, p.id)}>
+                  <TokenAvatar symbol={p.symbol} size={32} />
+                  <span>
+                    <b>{p.symbol}</b>
+                    <div className="muted">{p.name}</div>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {confirm ? (
         <div className="modal" onClick={() => setConfirm(null)}>
           <div className="card modal-card" onClick={(e) => e.stopPropagation()}>
             <h2>{d.confirmSwap}</h2>
             <p className="hint">
-              {d.chainQuote}: {tokenIn === "ugnot" ? fmtInt(confirm.amountOut) : fmtGnot(confirm.amountOut)} {outSym}
+              {d.sell} {tokenIn === "ugnot" ? fmtGnot(quote?.inn || 0n) : fmtInt(quote?.inn || 0n)} {inSym}
+            </p>
+            <p className="hint">
+              {d.buy} {tokenIn === "ugnot" ? fmtInt(confirm.amountOut) : fmtGnot(confirm.amountOut)} {outSym}
             </p>
             {(confirm.errors || []).map((c) => (
               <p key={c} className="hint impact-hi">

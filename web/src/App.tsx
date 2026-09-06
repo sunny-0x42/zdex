@@ -9,7 +9,6 @@ import Orders from "./components/Orders";
 import Portfolio from "./components/Portfolio";
 import Stats from "./components/Stats";
 import Swap from "./components/Swap";
-import Ticker from "./components/Ticker";
 import Toasts from "./components/Toasts";
 import { useDex } from "./context";
 
@@ -18,6 +17,7 @@ export default function App() {
   const title = d.tab[tab] || d.tab.swap;
   const sub = d.pageSub[tab] || d.pageSub.swap;
   const pkgOff = pkg && pkg !== net.pkg;
+  const swapMode = tab === "swap";
 
   return (
     <>
@@ -25,24 +25,25 @@ export default function App() {
         {d.skipToMain}
       </a>
       <Header />
-      <Ticker />
-      <div className="wrap fade-up" id="main" key={tab}>
-        <div className="page-head">
-          <div>
-            <h1>{title}</h1>
-            <p>{sub}</p>
+      <div className={`wrap fade-up${swapMode ? " swap-mode" : ""}`} id="main" key={tab}>
+        {!swapMode ? (
+          <div className="page-head">
+            <div>
+              <h1>{title}</h1>
+              <p>{sub}</p>
+            </div>
+            {tab === "pools" ? (
+              <button className="btn primary" type="button" onClick={() => setTab("create")}>
+                {d.newPool}
+              </button>
+            ) : null}
+            {tab === "create" ? (
+              <button className="btn ghost" type="button" onClick={() => setTab("pools")}>
+                {d.markets}
+              </button>
+            ) : null}
           </div>
-          {tab === "pools" ? (
-            <button className="btn primary" type="button" onClick={() => setTab("create")}>
-              {d.newPool}
-            </button>
-          ) : null}
-          {tab === "create" ? (
-            <button className="btn ghost" type="button" onClick={() => setTab("pools")}>
-              {d.markets}
-            </button>
-          ) : null}
-        </div>
+        ) : null}
         {pkgOff ? (
           <div className="notice">
             <span>

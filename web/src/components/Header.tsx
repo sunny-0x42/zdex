@@ -2,12 +2,15 @@ import { useEffect, useState } from "react";
 import { NETWORKS } from "../../config.js";
 import { useDex } from "../context";
 import { fmtGnot, parseUgnot, shortAddr } from "../lib/format";
+import { PRIMARY_TABS } from "../lib/hub";
+import type { Tab } from "../types";
 
 export default function Header() {
   const { TABS, tab, setTab, netId, setNetId, live, liveState, lastTick, account, wallet, walletAddr, connect, connectWatchAddr, toast, d } =
     useDex();
   const [age, setAge] = useState(d.connecting);
   const [menu, setMenu] = useState(false);
+  const [more, setMore] = useState(false);
   const [watch, setWatch] = useState("");
 
   useEffect(() => {
@@ -27,6 +30,8 @@ export default function Header() {
   const stale = lastTick && Date.now() - lastTick > 12000;
   const dot = liveState === "on" && !stale ? "on" : liveState === "err" || stale ? "err" : "";
   const connected = account && account.source === "adena";
+  const primary = TABS.filter((name) => PRIMARY_TABS.includes(name));
+  const extra: Tab[] = [...TABS.filter((name) => !PRIMARY_TABS.includes(name)), "stats", "create"];
 
   return (
     <header className="top">
@@ -37,7 +42,7 @@ export default function Header() {
         </div>
       </button>
       <nav className="nav desktop-nav">
-        {TABS.map((name) => (
+        {primary.map((name) => (
           <button
             key={name}
             className={`nav-btn${tab === name || (name === "pools" && tab === "create") ? " on" : ""}`}
@@ -48,6 +53,27 @@ export default function Header() {
             {d.tab[name]}
           </button>
         ))}
+        <div className="more-wrap">
+          <button className={`nav-btn${extra.includes(tab) ? " on" : ""}`} type="button" onClick={() => setMore((v) => !v)}>
+            {d.more}
+          </button>
+          {more ? (
+            <div className="menu">
+              {extra.map((name) => (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => {
+                    setMore(false);
+                    setTab(name);
+                  }}
+                >
+                  {d.tab[name]}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
       </nav>
       <div className="header-right">
         <label className="net-field">
@@ -65,11 +91,6 @@ export default function Header() {
           <span className="mono">{live.realmHeight || live.height || "—"}</span>
         </div>
         {live.paused ? <span className="pill warn">Paused</span> : null}
-        {live.faucet ? (
-          <button className="btn ghost sm" type="button" onClick={() => window.open(live.faucet, "_blank", "noopener")}>
-            {d.faucet}
-          </button>
-        ) : null}
         <div className="wallet-menu">
           <button className="btn wallet-btn" type="button" onClick={() => setMenu((v) => !v)}>
             {connected ? (

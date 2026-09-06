@@ -138,81 +138,82 @@ export default function Liquidity() {
 
   return (
     <section>
-      {!pools.length ? <img className="create-hero" src="/empty-liq.jpg" alt="" /> : null}
       <p className="lede">{d.noStakeHint}</p>
       <div className="grid">
         <div className="card">
           <div className="card-head">
             <h2>{d.addLiq}</h2>
           </div>
-          <div className="token-box">
-            <div className="token-row">
-              <span className="muted">{d.gnotSide}</span>
-              <span className="muted">{fmtGnot(wallet.coins)} GNOT</span>
-            </div>
-            <div className="token-row">
-              <input type="number" min="0" step="any" value={gnot} onChange={(e) => setGnot(e.target.value)} />
-              <TokenChip symbol="GNOT" />
-            </div>
-          </div>
-
-          <div className="token-box">
-            <div className="token-row">
-              <span className="muted">{d.tokenSide}</span>
-              <span className="muted">{resolved ? `${resolved.symbol}` : d.selectToken}</span>
-            </div>
-            <label>{d.selectToken}</label>
-            <select
-              value={pick}
-              onChange={(e) => {
-                setPick(e.target.value);
-                if (e.target.value !== "__custom") setLookupErr("");
-              }}
-            >
-              <option value="">{d.selectToken}</option>
-              {options.map((t) => (
-                <option key={t.symbol} value={t.symbol}>
-                  {t.symbol}
-                  {t.name && t.name !== t.symbol ? ` — ${t.name}` : ""}
-                  {t.pooled ? " · pool" : ""}
-                </option>
-              ))}
-              <option value="__custom">{d.customToken}</option>
-            </select>
-            {pick === "__custom" || !options.length ? (
-              <div className="lookup-row">
-                <input
-                  value={custom}
-                  onChange={(e) => setCustom(e.target.value)}
-                  placeholder={d.pasteHint}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      void lookupCustom();
-                    }
-                  }}
-                />
-                <button className="btn sm" type="button" onClick={() => void lookupCustom()}>
-                  {d.lookup}
-                </button>
+          <div className="swap-stack">
+            <div className="swap-panel">
+              <div className="swap-panel-top">
+                <span>{d.gnotSide}</span>
+                <span>{fmtGnot(wallet.coins)} GNOT</span>
               </div>
-            ) : null}
-            {lookupErr ? <p className="hint impact-hi">{lookupErr}</p> : null}
-            {resolved ? (
-              <p className="hint">
-                {resolved.name} · {resolved.internal ? "internal" : resolved.key}
-              </p>
-            ) : null}
-            <label>{isNew ? d.tokenAmt : d.tokenMax}</label>
-            <div className="token-row">
-              <input
-                type="number"
-                min="0"
-                value={isNew ? tokenAmt : need > 0n ? need.toString() : tokenAmt}
-                readOnly={!isNew && need > 0n}
-                onChange={(e) => setTokenAmt(e.target.value)}
-              />
-              {resolved ? <TokenChip symbol={resolved.symbol} /> : null}
+              <div className="swap-panel-row">
+                <input className="swap-amt" type="number" min="0" step="any" value={gnot} onChange={(e) => setGnot(e.target.value)} />
+                <TokenChip symbol="GNOT" />
+              </div>
+            </div>
+
+            <div className="swap-panel">
+              <div className="swap-panel-top">
+                <span>{isNew ? d.tokenAmt : d.tokenMax}</span>
+                <span>{resolved ? resolved.symbol : d.selectToken}</span>
+              </div>
+              <div className="swap-panel-row">
+                <input
+                  className="swap-amt"
+                  type="number"
+                  min="0"
+                  value={isNew ? tokenAmt : need > 0n ? need.toString() : tokenAmt}
+                  readOnly={!isNew && need > 0n}
+                  onChange={(e) => setTokenAmt(e.target.value)}
+                />
+                {resolved ? <TokenChip symbol={resolved.symbol} /> : null}
+              </div>
+              <label>{d.selectToken}</label>
+              <select
+                value={pick}
+                onChange={(e) => {
+                  setPick(e.target.value);
+                  if (e.target.value !== "__custom") setLookupErr("");
+                }}
+              >
+                <option value="">{d.selectToken}</option>
+                {options.map((t) => (
+                  <option key={t.symbol} value={t.symbol}>
+                    {t.symbol}
+                    {t.name && t.name !== t.symbol ? ` — ${t.name}` : ""}
+                    {t.pooled ? " · pool" : ""}
+                  </option>
+                ))}
+                <option value="__custom">{d.customToken}</option>
+              </select>
+              {pick === "__custom" || !options.length ? (
+                <div className="lookup-row">
+                  <input
+                    value={custom}
+                    onChange={(e) => setCustom(e.target.value)}
+                    placeholder={d.pasteHint}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        void lookupCustom();
+                      }
+                    }}
+                  />
+                  <button className="btn sm" type="button" onClick={() => void lookupCustom()}>
+                    {d.lookup}
+                  </button>
+                </div>
+              ) : null}
+              {lookupErr ? <p className="hint impact-hi">{lookupErr}</p> : null}
+              {resolved ? (
+                <p className="hint">
+                  {resolved.name} · {resolved.internal ? "internal" : resolved.key}
+                </p>
+              ) : null}
             </div>
           </div>
 

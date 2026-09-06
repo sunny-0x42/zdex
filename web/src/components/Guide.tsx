@@ -29,8 +29,7 @@ export default function Guide() {
 
   return (
     <section className="guide">
-      <img className="guide-hero" src="/og.jpg" alt="" />
-      <div className="notice guide-banner" role="note">
+      <div className="notice" role="note">
         {g.banner}
       </div>
       <nav className="guide-toc" aria-label={g.onThisPage}>
