@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useDex } from "../context";
-import { fmtGnot, toUgnot } from "../lib/format";
+import { fmtApr, gaugeBoostPct, lpFeeAprPct, rewardAprPct } from "../lib/amm";
+import { fmtGnot, fmtInt, toUgnot } from "../lib/format";
 import { gaugeFor, incentivesEnabled, isIncentivized } from "../lib/hub";
 import type { Pool } from "../types";
 
@@ -21,6 +22,10 @@ export default function GaugePanel({ pool }: { pool: Pool | null }) {
   const canSign = Boolean(account && account.source === "adena" && !previewing);
   const funded = Boolean(gauge?.totalFunded && gauge.totalFunded !== "0");
   const fundOk = Boolean(pool && canSign && u >= 1_000_000n);
+  const feeApr = pool ? lpFeeAprPct(pool) : null;
+  const boost = pool && gauge ? gaugeBoostPct(gauge.totalFunded, pool.reserveU) : null;
+  const rApr = pool && gauge ? rewardAprPct(gauge.rewardPerBlock, pool.reserveU) : null;
+  const lp = pool ? wallet.positions?.[pool.id] || "0" : "0";
 
   return (
     <div className="card">
@@ -29,16 +34,40 @@ export default function GaugePanel({ pool }: { pool: Pool | null }) {
         {incentivized ? <span className="pill live">{d.incentivized}</span> : null}
       </div>
       <p className="hint">{d.gaugeHint}</p>
+      <p className="hint">{d.realtimeHint}</p>
       {pool ? (
-        <p className="stat">
-          {pool.symbol}/GNOT
+        <div className="stats">
+          <div>
+            <span>{d.feeApr}</span>
+            <b>{fmtApr(feeApr)}</b>
+          </div>
+          <div>
+            <span>{d.pendingReward}</span>
+            <b>{fmtGnot(claimN)} GNOT</b>
+          </div>
+          <div>
+            <span>{d.yourShare}</span>
+            <b>{fmtInt(lp)} LP</b>
+          </div>
           {funded ? (
-            <>
-              {" · "}
-              {d.gaugeFunded} <b>{fmtGnot(gauge!.totalFunded)} GNOT</b>
-            </>
+            <div>
+              <span>{d.boostTvl}</span>
+              <b>{fmtApr(boost)}</b>
+            </div>
           ) : null}
-        </p>
+          {rApr != null ? (
+            <div>
+              <span>{d.rewardApr}</span>
+              <b>{fmtApr(rApr)}</b>
+            </div>
+          ) : null}
+          {funded ? (
+            <div>
+              <span>{d.gaugeFunded}</span>
+              <b>{fmtGnot(gauge!.totalFunded)} GNOT</b>
+            </div>
+          ) : null}
+        </div>
       ) : null}
       {gauge?.paused ? <p className="hint">{d.gaugePaused}</p> : null}
       {!pool ? <p className="hint">{d.pickPoolFirst}</p> : null}

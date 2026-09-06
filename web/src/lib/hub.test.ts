@@ -96,7 +96,19 @@ describe("hub", () => {
     expect(parseGaugeList("ugnot|ZTT\nugnot|DEMO")).toEqual(["ugnot|ZTT", "ugnot|DEMO"]);
     expect(parseGaugeList("ugnot|ZTT;100;5000000;1;0")).toEqual(["ugnot|ZTT"]);
     const g = parseGaugeSnapshot("ugnot|ZTT;12;5000000;1;0");
-    expect(g).toEqual({ id: "ugnot|ZTT", acc: "12", totalFunded: "5000000", on: true, paused: false });
+    expect(g).toEqual({
+      id: "ugnot|ZTT",
+      acc: "12",
+      totalFunded: "5000000",
+      on: true,
+      paused: false,
+      endH: "",
+      rewardPerBlock: "0",
+      remaining: "",
+    });
+    const timed = parseGaugeSnapshot("ugnot|ZTT;1;100000000;1;0;250000;3;90000000");
+    expect(timed?.rewardPerBlock).toBe("3");
+    expect(timed?.remaining).toBe("90000000");
     expect(parseGaugeSnapshot("ugnot|ZTT;0;0;0;1")?.on).toBe(false);
     const live = { pools: [], orders: [], ok: true, gauges: [g!] };
     expect(isIncentivized(live, "ugnot|ZTT")).toBe(true);

@@ -73,6 +73,24 @@ export default function Portfolio() {
             >
               {d.pointsHarvest}
             </button>
+            {pools.some((p) => BigInt(wallet.incentives?.[p.id] || "0") > 0n) ? (
+              <>
+                <h2 style={{ marginTop: 16 }}>{d.pendingReward}</h2>
+                <p className="hint">{d.realtimeHint}</p>
+                <div className="stats">
+                  {pools.map((p) => {
+                    const n = wallet.incentives?.[p.id] || "0";
+                    if (n === "0") return null;
+                    return (
+                      <div key={p.id}>
+                        <span>{p.symbol}</span>
+                        <b>{fmtGnot(n)} GNOT</b>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            ) : null}
           </>
         ) : null}
         {vests.length ? (

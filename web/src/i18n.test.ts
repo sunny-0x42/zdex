@@ -21,6 +21,10 @@ describe("copy", () => {
     expect(copy.gaugeHint).not.toMatch(/APY/i);
     expect(copy.fundGauge).not.toMatch(/APY/i);
     expect(copy.claimIncentive).not.toMatch(/APY/i);
+    expect(copy.feeApr).toMatch(/est/i);
+    expect(copy.rewardApr).toMatch(/est/i);
+    expect(copy.boostTvl).not.toMatch(/APR/i);
+    expect(copy.realtimeHint).toMatch(/not a promised return/i);
   });
   it("documents DEX facts without Launch or yield promises", () => {
     const g = Object.values(copy.guide).join(" ");

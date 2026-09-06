@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { amountOut, lpFeeAprPct, mulDiv, mulDivCeil, quoteLocal } from "./amm";
+import { amountOut, fmtApr, gaugeBoostPct, lpFeeAprPct, mulDiv, mulDivCeil, quoteLocal, rewardAprPct } from "./amm";
 import type { Pool } from "../types";
 
 const pool: Pool = {
@@ -39,6 +39,17 @@ describe("lpFeeAprPct", () => {
     const n = lpFeeAprPct({ ...pool, launched: false, feeBps: 30, volumeU: "982149509" });
     expect(n).not.toBeNull();
     expect(n as number).toBeGreaterThan(5);
+  });
+  it("does not treat a lump gauge as APR", () => {
+    expect(gaugeBoostPct("100000000", "300000000")).toBeCloseTo(100 / 3, 5);
+    expect(rewardAprPct("0", "300000000")).toBeNull();
+    expect(fmtApr(null)).toBe("—");
+  });
+  it("annualizes linear ugnot-per-block emissions", () => {
+    const rpb = 100000000 / 28800;
+    const n = rewardAprPct(String(rpb), "300000000");
+    expect(n).not.toBeNull();
+    expect(n as number).toBeGreaterThan(100);
   });
 });
 

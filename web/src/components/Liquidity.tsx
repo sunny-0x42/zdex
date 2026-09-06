@@ -297,6 +297,9 @@ export default function Liquidity() {
                 </div>
                 <div className="muted" style={{ fontSize: 12 }}>
                   {row.feeBps / 100}% · {d.feeApr} {apr == null ? "—" : `${apr.toFixed(1)}%`}
+                  {wallet.incentives?.[row.id] && wallet.incentives[row.id] !== "0"
+                    ? ` · ${d.pendingReward} ${fmtGnot(wallet.incentives[row.id])}`
+                    : ""}
                 </div>
                 <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
                   {d.yourLp} {fmtInt(my)} · {rowSt.label}

@@ -61,7 +61,11 @@ export function quoteInLocal(p: Pool | null | undefined, tokenOut: string, amoun
   return inn;
 }
 
-/** Annualized LP fee APR from 24h volume. Legacy launch pools keep 50% of the swap fee; AMM pools keep ~5/6. */
+/** ~3s blocks → 28800 per day (same as epoch default). */
+export const BLOCKS_PER_DAY = 28800;
+export const BLOCKS_PER_YEAR = BLOCKS_PER_DAY * 365;
+
+/** Annualized LP fee APR from recent volume window. Not a promised return. */
 export function lpFeeAprPct(p: Pool): number | null {
   const tvl = Number(p.reserveU);
   const vol = Number(p.volumeU || 0);
@@ -69,6 +73,29 @@ export function lpFeeAprPct(p: Pool): number | null {
   const fee = Number(p.feeBps || 0) / 10000;
   const lpShare = p.launched ? 0.5 : (10000 - 1667) / 10000;
   return (vol * fee * lpShare) / tvl * 365 * 100;
+}
+
+/** Lump-sum program size vs TVL (%). Not APR. */
+export function gaugeBoostPct(funded: string | number | undefined, tvlU: string | number | undefined): number | null {
+  const f = Number(funded || 0);
+  const t = Number(tvlU || 0);
+  if (!(t > 0) || !(f > 0)) return null;
+  return (f / t) * 100;
+}
+
+/** Uniswap-style reward APR from linear ugnot-per-block emissions. */
+export function rewardAprPct(rewardPerBlock: string | number | undefined, tvlU: string | number | undefined): number | null {
+  const r = Number(rewardPerBlock || 0);
+  const t = Number(tvlU || 0);
+  if (!(t > 0) || !(r > 0)) return null;
+  return (r * BLOCKS_PER_YEAR) / t * 100;
+}
+
+export function fmtApr(n: number | null | undefined): string {
+  if (n == null || !Number.isFinite(n)) return "—";
+  if (n >= 100) return `${n.toFixed(0)}%`;
+  if (n >= 10) return `${n.toFixed(1)}%`;
+  return `${n.toFixed(2)}%`;
 }
 
 export function sparkPath(values: number[] | undefined, w: number, h: number): string {

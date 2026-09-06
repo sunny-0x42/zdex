@@ -1,11 +1,12 @@
 import { useDex } from "../context";
-import { lpFeeAprPct } from "../lib/amm";
+import { fmtApr, gaugeBoostPct, lpFeeAprPct } from "../lib/amm";
+import { gaugeFor } from "../lib/hub";
 import { fmtGnot, fmtInt } from "../lib/format";
 import { isIncentivized } from "../lib/hub";
 import Spark from "./Spark";
 
 export default function Markets() {
-  const { pools, tradePool, addLp, setTab, d, live } = useDex();
+  const { pools, tradePool, addLp, setTab, d, live, wallet } = useDex();
   if (!pools.length) {
     return (
       <div className="card empty-card">
@@ -39,7 +40,10 @@ export default function Markets() {
               {fmtInt(p.quote1gnot)} <span className="muted">{p.symbol}</span>
             </div>
             <div className="muted mkt-meta">
-              {fmtGnot(p.reserveU)} GNOT · {p.feeBps / 100}% · APR {lpFeeAprPct(p) == null ? "—" : `${lpFeeAprPct(p)!.toFixed(1)}%`}
+              {fmtGnot(p.reserveU)} GNOT · {p.feeBps / 100}% · {d.feeApr} {fmtApr(lpFeeAprPct(p))}
+              {isIncentivized(live, p.id)
+                ? ` · ${d.boostTvl} ${fmtApr(gaugeBoostPct(gaugeFor(live, p.id)?.totalFunded, p.reserveU))}`
+                : ""}
             </div>
             <Spark className="mini-spark" values={p.spark || []} w={240} h={36} />
             <button
@@ -76,6 +80,8 @@ export default function Markets() {
                 <th className="r">{d.volume}</th>
                 <th className="r">{d.fee}</th>
                 <th className="r">{d.feeApr}</th>
+                <th className="r">{d.boostTvl}</th>
+                <th className="r">{d.pendingReward}</th>
                 <th />
               </tr>
             </thead>
@@ -95,7 +101,9 @@ export default function Markets() {
                   <td className="r">{fmtGnot(p.reserveU)}</td>
                   <td className="r">{fmtGnot(p.volumeU || "0")}</td>
                   <td className="r">{p.feeBps / 100}%</td>
-                  <td className="r">{lpFeeAprPct(p) == null ? "—" : `${lpFeeAprPct(p)!.toFixed(1)}%`}</td>
+                  <td className="r">{fmtApr(lpFeeAprPct(p))}</td>
+                  <td className="r">{fmtApr(gaugeBoostPct(gaugeFor(live, p.id)?.totalFunded, p.reserveU))}</td>
+                  <td className="r">{fmtGnot(wallet.incentives?.[p.id] || "0")}</td>
                   <td className="r">
                     <button className="btn sm" type="button" onClick={() => addLp(p.id)}>
                       {d.canAdd}

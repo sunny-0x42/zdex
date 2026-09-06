@@ -122,6 +122,9 @@ export function parseGaugeSnapshot(raw: string | undefined): Gauge | null {
     totalFunded: p[2] || "0",
     on: p.length < 4 ? true : flag(p[3]),
     paused: flag(p[4]),
+    endH: p[5] || "",
+    rewardPerBlock: p[6] || "0",
+    remaining: p[7] || "",
   };
 }
 

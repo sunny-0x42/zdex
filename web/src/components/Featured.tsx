@@ -1,4 +1,5 @@
 import { useDex } from "../context";
+import { fmtApr, lpFeeAprPct } from "../lib/amm";
 import { fmtGnot, fmtInt } from "../lib/format";
 
 export default function Featured() {
@@ -25,6 +26,10 @@ export default function Featured() {
         <div>
           <span>{d.volume}</span>
           <b>{fmtGnot(featured.volumeU || "0")}</b>
+        </div>
+        <div>
+          <span>{d.feeApr}</span>
+          <b>{fmtApr(lpFeeAprPct(featured))}</b>
         </div>
       </div>
       <button className="btn primary sm" type="button" onClick={() => tradePool(featured.id)}>

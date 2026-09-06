@@ -47,6 +47,9 @@ export type Gauge = {
   totalFunded: string;
   on: boolean;
   paused: boolean;
+  endH?: string;
+  rewardPerBlock?: string;
+  remaining?: string;
 };
 
 export type Hub = {
