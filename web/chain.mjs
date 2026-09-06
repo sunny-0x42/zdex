@@ -6,7 +6,14 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { NETWORKS, DEFAULT_NET, NETWORK, PKG_PATH, GRC20_REG } from "./config.js";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+let __dirname = process.cwd();
+try {
+  if (import.meta && import.meta.url) {
+    __dirname = path.dirname(fileURLToPath(import.meta.url));
+  }
+} catch {
+  /* Netlify CJS bundle has empty import.meta */
+}
 export const POLL_MS = 2500;
 const HISTORY = 48;
 const KNOWN_NAMES = { ZTT: "ZDEX Test", DEMO: "Demo", SDEM: "Sapphire Demo" };
