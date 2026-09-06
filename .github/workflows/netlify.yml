@@ -1,0 +1,27 @@
+name: netlify
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      VITE_ZDEX_DEFAULT_NET: pearl
+      ZDEX_DEFAULT_NET: pearl
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Build UI
+        run: npm --prefix web ci && npm --prefix web run build
+      - name: Deploy to Netlify
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        run: npx netlify-cli deploy --prod --dir web/dist --functions web/netlify/functions --message "github ${{ github.sha }}"

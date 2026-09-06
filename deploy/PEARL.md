@@ -4,9 +4,10 @@ Human **yes** 2026-09-06: complete + Pearl deploy.
 
 Tried `gno_addpkg profile=pearl simulate=true` → **refused**: `chain-id "pearl-1" is read-only — read-only chains have no agent key`.
 
-Stock gnomcp treats `pearl-1` like mainnet/betanet. This agent **cannot** broadcast addpkg to Pearl (and will not run `gnokey`).
+Stock gnomcp treats `pearl-1` like mainnet/betanet. This agent **cannot** broadcast addpkg to Pearl and **will not** import a seed or run `gnokey` with a password from chat.
 
-Packet is ready. Broadcast needs a gnomcp that marks Pearl writable, or the user signing with their own key outside this chat.
+Rewritten packet (imports + `gnomod.toml` for the deployer g1): `deploy/pearl/`.
+Run it yourself: `deploy/pearl/README.md`.
 
 ## Chain
 

@@ -30,13 +30,33 @@ export const NETWORKS = {
     rpcUrl: "https://rpc.pearl.testnets.gno.land:443",
     gnoweb: "https://pearl.testnets.gno.land",
     faucet: "https://pearl.testnets.gno.land/faucet",
-    pkg: "",
-    viewAddr: "",
+    pkg: "gno.land/r/g1mv0052e7r6s09f5t9xsqf00nj3tqsgt9dg52jr/zdex/v2",
+    viewAddr: "g1mv0052e7r6s09f5t9xsqf00nj3tqsgt9dg52jr",
   },
 };
 
-export const DEFAULT_NET = "local";
+function defaultNet() {
+  let raw = "";
+  try {
+    if (typeof process !== "undefined" && process.env) {
+      raw = process.env.ZDEX_DEFAULT_NET || process.env.VITE_ZDEX_DEFAULT_NET || "";
+    }
+  } catch {
+    /* ignore */
+  }
+  try {
+    if (!raw && typeof import.meta !== "undefined" && import.meta.env) {
+      raw = import.meta.env.VITE_ZDEX_DEFAULT_NET || "";
+    }
+  } catch {
+    /* ignore */
+  }
+  const id = String(raw || "local").toLowerCase();
+  return NETWORKS[id] ? id : "local";
+}
+
+export const DEFAULT_NET = defaultNet();
 export const NETWORK = NETWORKS[DEFAULT_NET];
 export const PKG_PATH = NETWORK.pkg;
-export const DEPLOYER = "g1y0n2geu0rmdrm9u30c5fmk3ykkl2enw9n9yr2k";
+export const DEPLOYER = "g1mv0052e7r6s09f5t9xsqf00nj3tqsgt9dg52jr";
 export const GRC20_REG = "gno.land/r/demo/defi/grc20reg";

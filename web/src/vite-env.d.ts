@@ -27,6 +27,14 @@ interface Adena {
 
 export {};
 
+interface ImportMetaEnv {
+  readonly VITE_ZDEX_DEFAULT_NET?: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
+
 declare global {
   interface Window {
     adena?: Adena;

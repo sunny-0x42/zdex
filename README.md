@@ -38,19 +38,26 @@ Cần `GNOROOT` trỏ source Gno khớp chain, và `gno mod download` deps từ 
 gno mod download -remote-overrides "gno.land=https://rpc.pearl.testnets.gno.land"
 ```
 
-## UI (Sapphire)
+## UI
+
+Production: https://zdex-gno.netlify.app (default net **Pearl**).
+Source: https://github.com/sunny-0x42/zdex
+
+Pearl realm (after addpkg):
+
+`gno.land/r/g1mv0052e7r6s09f5t9xsqf00nj3tqsgt9dg52jr/zdex/v2`
+
+Gnoweb: https://pearl.testnets.gno.land/r/g1mv0052e7r6s09f5t9xsqf00nj3tqsgt9dg52jr/zdex/v2
+Faucet: https://pearl.testnets.gno.land/faucet
+
+Local:
 
 ```
 cd web
 node server.mjs
 ```
 
-Mở http://127.0.0.1:8787 — UI realtime (height, ticker, quote, sparkline) + Adena (Sapphire). Realm:
-
-`gno.land/r/g1y0n2geu0rmdrm9u30c5fmk3ykkl2enw9n9yr2k/zdex`
-
-Gnoweb: https://sapphire.testnets.gno.land/r/g1y0n2geu0rmdrm9u30c5fmk3ykkl2enw9n9yr2k/zdex
-Faucet: https://sapphire.testnets.gno.land/faucet
+Mở http://127.0.0.1:8787 (default net **local**). Sapphire still listed in the network picker.
 
 ## Local gnodev
 
