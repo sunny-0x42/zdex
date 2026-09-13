@@ -11,9 +11,10 @@ const (
 	minListUgnot  = int64(1_000_000) // 1 GNOT minimum to open a pool
 
 	// DEX fee tiers (bps of notional). Protocol takes poolProtocolFeeBps of the fee.
-	feeTierLow  = int64(5)   // 0.05%
-	feeTierMid  = int64(30)  // 0.30%
-	feeTierHigh = int64(100) // 1.00%
+	feeTierStable = int64(1)   // 0.01% — Uniswap v3-style stable tier (local + future gens)
+	feeTierLow    = int64(5)   // 0.05%
+	feeTierMid    = int64(30)  // 0.30%
+	feeTierHigh   = int64(100) // 1.00%
 
 	// Launch safety — tighter than zSwap, which mints creator tokens unlocked.
 	maxCreatorKeepBps  = int64(2000)  // 20%
@@ -35,7 +36,7 @@ const (
 )
 
 func validSwapFee(bps int64) bool {
-	return bps == feeTierLow || bps == feeTierMid || bps == feeTierHigh
+	return bps == feeTierStable || bps == feeTierLow || bps == feeTierMid || bps == feeTierHigh
 }
 
 type Pool struct {

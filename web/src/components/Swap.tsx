@@ -380,6 +380,10 @@ export default function Swap() {
               <b>{quote?.feeTxt || "—"}</b>
             </div>
             <div>
+              <span>Protocol / LPs</span>
+              <b>~1/6 · ~5/6</b>
+            </div>
+            <div>
               <span>{d.slippage}</span>
               <b>{Number(slippage) / 100}%</b>
             </div>

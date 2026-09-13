@@ -161,7 +161,8 @@ export default function CreatePool() {
         </div>
         <label>{d.feeTier}</label>
         <select value={feeBps} onChange={(e) => setFeeBps(e.target.value)}>
-          <option value="5">0.05% — stable / tight</option>
+          <option value="1">0.01% — stables</option>
+          <option value="5">0.05% — tight</option>
           <option value="30">0.30% — standard AMM</option>
           <option value="100">1.00% — volatile</option>
         </select>

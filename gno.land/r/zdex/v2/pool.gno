@@ -17,7 +17,7 @@ func CreatePool(cur realm, tokenKey, symbol string, amountU, amountT, feeBps int
 	if feeBps == 0 {
 		feeBps = defaultFeeBps
 	}
-	require(validSwapFee(feeBps), "zdex: fee tier 5/30/100")
+	require(validSwapFee(feeBps), "zdex: fee tier 1/5/30/100")
 	require(symbol != "", "zdex: symbol")
 	id := poolIDFor(symbol)
 	require(tryPool(id) == nil, "zdex: pool exists")

@@ -274,6 +274,7 @@ export default function Liquidity({ listing = false }: { listing?: boolean }) {
             <>
               <label>{d.feeTier}</label>
               <select value={feeBps} onChange={(e) => setFeeBps(e.target.value)}>
+                <option value="1">0.01%</option>
                 <option value="5">0.05%</option>
                 <option value="30">0.30%</option>
                 <option value="100">1.00%</option>

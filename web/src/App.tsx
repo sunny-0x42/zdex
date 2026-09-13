@@ -1,6 +1,7 @@
 import BottomNav from "./components/BottomNav";
 import Footer from "./components/Footer";
 import Header from "./components/Header";
+import Docs from "./components/Docs";
 import Guide from "./components/Guide";
 import Liquidity from "./components/Liquidity";
 import Markets from "./components/Markets";
@@ -61,6 +62,7 @@ export default function App() {
         {tab === "port" ? <Portfolio /> : null}
         {tab === "stats" ? <Stats /> : null}
         {tab === "guide" ? <Guide /> : null}
+        {tab === "docs" ? <Docs /> : null}
       </div>
       <Footer />
       <BottomNav />

@@ -169,6 +169,7 @@ export const copy = {
     port: "Balances, LP positions, and fee share.",
     stats: "Protocol totals from the live realm.",
     guide: "How zdex works — pools, fees, points, and gauges.",
+    docs: "Protocol, fees, and how zdex differs from Uniswap and GnoSwap.",
   } as Record<Tab, string>,
   guide: {
     onThisPage: "On this page",
@@ -179,7 +180,7 @@ export const copy = {
     connectTitle: "Connect",
     connect: "Install Adena and connect from the header. You sign every write in the wallet; zdex never holds keys. A watch address is read-only. Keplr does not support Gno MsgCall. Signing never moves server-side.",
     createTitle: "Create pool",
-    create: "CreatePool lists an existing GRC20 against GNOT. Minimum 1 GNOT to open a pool. Fee tiers are 5 / 30 / 100 bps (0.05% / 0.30% / 1.00%). The protocol takes about one-sixth of the swap fee; LPs keep about five-sixths with no extra stake. External GRC20: Look up the registry key (pkg.SYMBOL), Approve the DEX realm on the TOKEN package, then CreatePool. Internal tokens do not need approval.",
+    create: "CreatePool lists an existing GRC20 against GNOT. Minimum 1 GNOT to open a pool. Fee tiers are 1 / 5 / 30 / 100 bps (0.01% / 0.05% / 0.30% / 1.00%). The protocol takes about one-sixth of the swap fee; LPs keep about five-sixths with no extra stake. External GRC20: Look up the registry key (pkg.SYMBOL), Approve the DEX realm on the TOKEN package, then CreatePool. Internal tokens do not need approval.",
     swapTitle: "Swap",
     swap: "Pick a GNOT pool, then pay GNOT or the listed token. GNOT-in attaches native ugnot to the transaction via OriginSend. Selling an external GRC20 requires Approve on the TOKEN package (spender = DEX realm). Exact out calls SwapExactOut with a max-in cap; excess GNOT is refunded. Confirm uses the on-chain quote. Set slippage at 0.5% / 1% / 2%. Anti-snipe windows on legacy pools can revert large trades.",
     liqTitle: "Liquidity",
@@ -262,6 +263,7 @@ export const copy = {
     port: "Portfolio",
     stats: "Overview",
     guide: "Guide",
+    docs: "Docs",
   } as Record<Tab, string>,
 };
 

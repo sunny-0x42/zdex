@@ -7,6 +7,7 @@ describe("copy", () => {
     expect(copy.connect).toBe("Connect");
     expect(copy.noWallet).toMatch(/wallet/i);
     expect(copy.tab.guide).toBe("Guide");
+    expect(copy.tab.docs).toBe("Docs");
     expect(copy.pageSub.guide).toMatch(/how zdex works/i);
   });
   it("maps error codes", () => {
@@ -25,6 +26,17 @@ describe("copy", () => {
     expect(copy.rewardApr).toMatch(/est/i);
     expect(copy.boostTvl).not.toMatch(/APR/i);
     expect(copy.realtimeHint).toMatch(/not a promised return/i);
+    expect(copy.searchTokens).toBe("Search tokens");
+    expect(copy.yourTokens).toBe("Your tokens");
+    expect(copy.pooled).toBe("Pooled");
+    expect(copy.importToken).toBe("Import token");
+    expect(copy.lumpV1).toBe("Lump (v1)");
+    expect(copy.timedProgram).toBe("Timed program");
+    expect(copy.remaining).toBe("Remaining");
+    expect(copy.endsAtHeight).toBe("Ends at height");
+    expect(copy.syncAllPkgs).toBe("Sync all packages");
+    expect(copy.lumpV1).not.toMatch(/APY/i);
+    expect(copy.timedProgram).not.toMatch(/APY/i);
   });
   it("documents DEX facts without Launch or yield promises", () => {
     const g = Object.values(copy.guide).join(" ");

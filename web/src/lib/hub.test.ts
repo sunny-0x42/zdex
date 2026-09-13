@@ -42,14 +42,15 @@ describe("hub", () => {
 
   it("hides book tab when cap is off", () => {
     const caps = parseCapsList("swap;lp;create;points;quote");
-    expect(tabsFor(caps)).toEqual(["swap", "pools", "liq", "port", "guide"]);
+    expect(tabsFor(caps)).toEqual(["swap", "pools", "liq", "port", "guide", "docs"]);
   });
 
   it("keeps guide in nav and create/stats as routes", () => {
     expect(ALL_TABS).toContain("guide");
     expect(ALL_TABS).toContain("create");
     expect(ALL_TABS).toContain("stats");
-    expect(NAV_TABS).toEqual(["swap", "pools", "liq", "book", "port", "guide"]);
+    expect(NAV_TABS).toEqual(["swap", "pools", "liq", "book", "port", "guide", "docs"]);
+    expect(ALL_TABS).toContain("docs");
     const tabs = tabsFor();
     expect(tabs).toContain("guide");
     expect(tabs).not.toContain("create");
