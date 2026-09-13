@@ -100,6 +100,7 @@ export function pkgForFunc(live: Live | undefined, func: string, fallback: strin
   const surface = FUNC_SURFACE[func] || "admin";
   if (surface === "incentives") {
     if (func === "Fund" || func === "FundProgram") {
+      if (live?.incentivesV4Live && live.incentivesV4Pkg) return live.incentivesV4Pkg;
       if (live?.incentivesV3Live && live.incentivesV3Pkg) return live.incentivesV3Pkg;
       if (live?.incentivesV2Live && live.incentivesV2Pkg) return live.incentivesV2Pkg;
       return live?.modules?.incentives || live?.incentivesPkg || incentivesPkg || "";
@@ -146,13 +147,13 @@ export function gaugeFor(live: Live | undefined, poolId: string): Gauge | undefi
 
 export function isLumpGauge(g: Gauge): boolean {
   if (/incentives\/v1(?:$|\/)/.test(g.pkg || "")) return true;
-  if (/incentives\/v[23]/.test(g.pkg || "")) return false;
+  if (/incentives\/v[234]/.test(g.pkg || "")) return false;
   return (!g.rewardPerBlock || g.rewardPerBlock === "0") && (!g.remaining || g.remaining === "0");
 }
 
 export function isTimedGauge(g: Gauge): boolean {
   if (/incentives\/v1(?:$|\/)/.test(g.pkg || "")) return false;
-  return Boolean((g.rewardPerBlock && g.rewardPerBlock !== "0") || (g.remaining && g.remaining !== "0") || /incentives\/v[23]/.test(g.pkg || ""));
+  return Boolean((g.rewardPerBlock && g.rewardPerBlock !== "0") || (g.remaining && g.remaining !== "0") || /incentives\/v[234]/.test(g.pkg || ""));
 }
 
 export function isIncentivized(live: Live | undefined, poolId: string): boolean {

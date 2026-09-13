@@ -29,7 +29,7 @@ export default function GaugePanel({ pool }: { pool: Pool | null }) {
   const boost = pool && lump ? gaugeBoostPct(lump.totalFunded, pool.reserveU) : null;
   const rApr = pool && timed ? rewardAprPct(timed.rewardPerBlock, pool.reserveU) : null;
   const lp = pool ? wallet.positions?.[pool.id] || "0" : "0";
-  const timedLive = Boolean(live.incentivesV3Live);
+  const timedLive = Boolean(live.incentivesV4Live || live.incentivesV3Live);
 
   async function allPkgs(fn: "Claim" | "Sync") {
     const pkgs = rows.length ? rows.map((g) => g.pkg || "") : [lump?.pkg || timed?.pkg || ""];

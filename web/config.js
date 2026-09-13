@@ -14,6 +14,8 @@ export const NETWORKS = {
     incentivesPkg: "gno.land/r/zdex/incentives/v1",
     incentivesV2Pkg: "gno.land/r/zdex/incentives/v2",
     incentivesV3Pkg: "gno.land/r/zdex/incentives/v3",
+    incentivesV4Pkg: "gno.land/r/zdex/incentives/v4",
+    oraclePkg: "gno.land/r/zdex/oracle/v1",
     viewAddr: "g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5",
   },
   sapphire: {
@@ -38,6 +40,8 @@ export const NETWORKS = {
     incentivesPkg: "gno.land/r/g1mv0052e7r6s09f5t9xsqf00nj3tqsgt9dg52jr/zdex/incentives/v1",
     incentivesV2Pkg: "gno.land/r/g1mv0052e7r6s09f5t9xsqf00nj3tqsgt9dg52jr/zdex/incentives/v2",
     incentivesV3Pkg: "gno.land/r/g1mv0052e7r6s09f5t9xsqf00nj3tqsgt9dg52jr/zdex/incentives/v3",
+    incentivesV4Pkg: "gno.land/r/g1mv0052e7r6s09f5t9xsqf00nj3tqsgt9dg52jr/zdex/incentives/v4",
+    oraclePkg: "gno.land/r/g1mv0052e7r6s09f5t9xsqf00nj3tqsgt9dg52jr/zdex/oracle/v1",
     viewAddr: "g1mv0052e7r6s09f5t9xsqf00nj3tqsgt9dg52jr",
   },
 };

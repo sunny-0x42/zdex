@@ -25,6 +25,8 @@ export type Network = {
   incentivesPkg?: string;
   incentivesV2Pkg?: string;
   incentivesV3Pkg?: string;
+  incentivesV4Pkg?: string;
+  oraclePkg?: string;
   viewAddr: string;
 };
 
@@ -128,6 +130,10 @@ export type Live = {
   incentivesV2Live?: boolean;
   incentivesV3Pkg?: string;
   incentivesV3Live?: boolean;
+  incentivesV4Pkg?: string;
+  incentivesV4Live?: boolean;
+  oraclePkg?: string;
+  oracleLive?: boolean;
   gauges?: Gauge[];
   error?: string;
 };
