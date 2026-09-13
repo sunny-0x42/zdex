@@ -10,6 +10,9 @@ export default function Footer() {
         zdex
       </span>
       <nav className="footer-links">
+        <button className="link" type="button" onClick={() => setTab("stats")}>
+          {d.tab.stats}
+        </button>
         <button className="link" type="button" onClick={() => setTab("docs")}>
           {d.tab.docs}
         </button>

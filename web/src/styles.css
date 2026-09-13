@@ -725,3 +725,6 @@ tr:last-child td { border-bottom: 0; }
 .wrap.swap-mode { max-width: 520px; padding-top: 0.4rem; }
 .more-wrap { position: relative; }
 .empty-art { width: min(160px, 50%); aspect-ratio: 1; }
+.sidecar-pills { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.85rem; }
+.analytics .kpis { margin-bottom: 0; }
+.analytics .kpis + .kpis { margin-top: 10px; }
