@@ -372,6 +372,16 @@ td.r, th.r { text-align: right; }
 tr:last-child td { border-bottom: 0; }
 .side-bid { color: var(--good); }
 .side-ask { color: var(--bad); }
+.book-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+.book-col h3 { margin: 0 0 0.45rem; font-size: 0.82rem; text-transform: none; letter-spacing: 0; }
+.book-col table { font-size: 12px; }
+.book-yours td { background: var(--accent-soft); }
+.book-mid { display: flex; gap: 0.85rem; flex-wrap: wrap; font-size: 13px; color: var(--muted); margin: 0 0 0.65rem; }
+.book-mid b { color: var(--text); font-weight: 650; }
+@media (max-width: 720px) {
+  .book-grid { grid-template-columns: 1fr; }
+}
+.side-ask { color: var(--bad); }
 .fill-row { margin-top: 10px; }
 .impact-hi { color: var(--bad); }
 .impact-mid { color: var(--warn); }
