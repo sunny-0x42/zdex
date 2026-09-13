@@ -14,6 +14,17 @@ export function poolVolumeU(pools: Pool[] | undefined): number {
   return sumUgnot((pools || []).map((p) => p.volumeU));
 }
 
+/** Estimated swap fees from 24h |ΔreserveU| × feeBps. Not on-chain. */
+export function feeEstU(pools: Pool[] | undefined): number {
+  let s = 0;
+  for (const p of pools || []) {
+    const vol = Number(p.volumeU) || 0;
+    const bps = Number(p.feeBps) || 0;
+    s += (vol * bps) / 10000;
+  }
+  return s;
+}
+
 export function feeTierLabel(bps: number | undefined): string {
   if (bps == null || Number.isNaN(bps)) return "—";
   return `${(bps / 100).toFixed(2)}%`;

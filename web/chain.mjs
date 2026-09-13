@@ -16,6 +16,8 @@ try {
 }
 export const POLL_MS = 2500;
 const HISTORY = 48;
+const PLAT_CAP = 720;
+const PLAT_MIN_MS = 60_000;
 const KNOWN_NAMES = { ZTT: "ZDEX Test", DEMO: "Demo", SDEM: "Sapphire Demo" };
 const DATA_FILE = path.join(__dirname, "data", "spark.json");
 
@@ -24,6 +26,7 @@ export const errorByNet = new Map();
 const polling = new Set();
 const priceHist = new Map();
 const volStore = new Map();
+const platHist = new Map();
 
 loadStore();
 
@@ -38,6 +41,9 @@ function loadStore() {
       if (Array.isArray(v)) priceHist.set(k, v.map(Number).filter((n) => n > 0).slice(-HISTORY));
     }
     for (const [k, v] of Object.entries(j.vol || {})) volStore.set(k, v);
+    for (const [k, v] of Object.entries(j.plat || {})) {
+      if (Array.isArray(v)) platHist.set(k, v);
+    }
   } catch {
     /* first run */
   }
@@ -51,6 +57,7 @@ function saveStore() {
       JSON.stringify({
         hist: Object.fromEntries(priceHist),
         vol: Object.fromEntries(volStore),
+        plat: Object.fromEntries(platHist),
         ts: Date.now(),
       }),
     );
@@ -330,6 +337,26 @@ function trackVolume(netId, pool) {
   pool.volumeU = String(volumeU);
 }
 
+function snapshotPlat(netId, pools) {
+  const list = pools || [];
+  let tvlU = 0;
+  let volumeU = 0;
+  let feeU = 0;
+  for (const p of list) {
+    tvlU += Number(p.reserveU) || 0;
+    const vol = Number(p.volumeU) || 0;
+    volumeU += vol;
+    feeU += (vol * (Number(p.feeBps) || 0)) / 10000;
+  }
+  const arr = platHist.get(netId) || [];
+  const now = Date.now();
+  if (arr.length && now - arr[arr.length - 1].ts < PLAT_MIN_MS) return arr;
+  arr.push({ ts: now, tvlU, volumeU, feeU });
+  while (arr.length > PLAT_CAP) arr.shift();
+  platHist.set(netId, arr);
+  return arr;
+}
+
 function parseGaugeList(raw) {
   const out = [];
   for (const line of String(raw || "").split("\n")) {
@@ -553,6 +580,7 @@ export async function loadLive(netId, pkgOverride) {
   }
   await attachQuotes(net, pkg, net.id, body.pools);
   sortPools(body.pools);
+  snapshotPlat(net.id, body.pools);
   saveStore();
   let incentives = { pkg: net.incentivesPkg || "", gauges: [] };
   try {
@@ -880,6 +908,8 @@ export async function platformStats(netId, pkgParam) {
     orderCount,
     tvlU: String(Math.round(tvlU)),
     volumeU: String(Math.round(volumeU)),
+    feeU: String(Math.round((live.pools || []).reduce((s, p) => s + ((Number(p.volumeU) || 0) * (Number(p.feeBps) || 0)) / 10000, 0))),
+    series: platHist.get(netId) || [],
     virtualU: String(Math.round(virtualU)),
     launched: pools.filter((p) => p.launched).length,
     graduated: pools.filter((p) => Number(p.virtualU) === 0).length,

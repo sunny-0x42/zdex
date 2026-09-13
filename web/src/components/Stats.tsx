@@ -5,6 +5,7 @@ import { fmtApr, lpFeeAprPct } from "../lib/amm";
 import { api } from "../lib/api";
 import { fmtGnot, shortAddr } from "../lib/format";
 import { isIncentivized } from "../lib/hub";
+import Chart from "./Chart";
 import Spark from "./Spark";
 import { PairAvatars } from "./TokenAvatar";
 
@@ -21,6 +22,8 @@ type StatsPayload = {
   orderCount?: number;
   tvlU?: string;
   volumeU?: string;
+  feeU?: string;
+  series?: Array<{ ts: number; tvlU: number; volumeU: number; feeU: number }>;
   virtualU?: string;
   version?: string;
   nextPkg?: string;
@@ -55,6 +58,11 @@ export default function Stats() {
   const vol = st?.volumeU || String(poolVolumeU(pools));
   const book = splitOrders(live.orders);
   const funded = gaugeFundedU(live.gauges);
+  const series = st?.series || [];
+  const volSeries = series.map((x) => (Number(x.volumeU) || 0) / 1e6);
+  const feeSeries = series.map((x) => (Number(x.feeU) || 0) / 1e6);
+  const tvlSeries = series.map((x) => (Number(x.tvlU) || 0) / 1e6);
+  const feeNow = st?.feeU || "0";
 
   return (
     <section className="analytics">
@@ -99,6 +107,15 @@ export default function Stats() {
           <b>{fmtGnot(funded)} GNOT</b>
         </div>
       </div>
+
+      <div className="chart-grid">
+        <Chart title={d.chartVolume} hint={d.volumeEstHint} values={volSeries} color="#4c82fb" />
+        <Chart title={d.chartFees} hint={d.chartFeesHint} values={feeSeries} color="#40b66b" />
+        <Chart title={d.chartTvl} values={tvlSeries} color="#7aa2ff" />
+      </div>
+      <p className="hint">
+        {d.chartFees}: {fmtGnot(feeNow)} GNOT {d.est}
+      </p>
 
       <div className="card" style={{ marginTop: 14 }}>
         <div className="card-head">

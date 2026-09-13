@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { feeTierLabel, gaugeFundedU, poolTvlU, poolVolumeU, splitOrders } from "./analytics";
+import { feeEstU, feeTierLabel, gaugeFundedU, poolTvlU, poolVolumeU, splitOrders } from "./analytics";
 import type { Gauge, Order, Pool } from "../types";
 
 const p = (partial: Partial<Pool> & Pick<Pool, "id" | "symbol">): Pool =>
@@ -26,6 +26,7 @@ describe("analytics", () => {
     const pools = [p({ id: "a", symbol: "A", reserveU: "300000000", volumeU: "1000" }), p({ id: "b", symbol: "B", reserveU: "1000000", volumeU: "500" })];
     expect(poolTvlU(pools)).toBe(301000000);
     expect(poolVolumeU(pools)).toBe(1500);
+    expect(feeEstU([{ ...pools[0], feeBps: 30, volumeU: "1000000" } as Pool])).toBe(3000);
   });
   it("labels fee tiers and funded gauges", () => {
     expect(feeTierLabel(30)).toBe("0.30%");
