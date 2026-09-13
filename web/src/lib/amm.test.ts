@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { amountOut, fmtApr, gaugeBoostPct, lpFeeAprPct, mulDiv, mulDivCeil, quoteLocal, rewardAprPct } from "./amm";
+import { amountOut, exactOutPlan, fmtApr, gaugeBoostPct, lpFeeAprPct, mulDiv, mulDivCeil, quoteInLocal, quoteLocal, rewardAprPct } from "./amm";
 import type { Pool } from "../types";
 
 const pool: Pool = {
@@ -28,6 +28,18 @@ describe("mulDiv", () => {
   });
   it("ceil divides", () => {
     expect(mulDivCeil(1n, 1n, 3n)).toBe(1n);
+  });
+});
+
+describe("exactOutPlan", () => {
+  it("caps maxIn with slippage for SwapExactOut", () => {
+    const want = 1000n;
+    const plan = exactOutPlan(pool, "ugnot", want, 100n);
+    expect(plan).not.toBeNull();
+    expect(plan!.tokenOut).toBe("ZTT");
+    expect(plan!.out).toBe(want);
+    expect(plan!.inn).toBe(quoteInLocal(pool, "ZTT", want));
+    expect(plan!.maxIn).toBe(plan!.inn + mulDiv(plan!.inn, 100n, 10000n));
   });
 });
 

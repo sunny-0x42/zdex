@@ -625,6 +625,14 @@ export async function quoteExactIn(netId, pool, tokenIn, amountIn, pkgParam) {
   return { amountOut: String(out), source: "chain" };
 }
 
+export async function quoteExactOut(netId, pool, tokenOut, amountOut, pkgParam) {
+  const net = getNet(netId);
+  const pkg = pkgParam || net.pkg;
+  if (!pool) throw new Error("pkg and pool required");
+  const inn = await qeval(net, pkg, `QuoteIn(${JSON.stringify(pool)}, ${JSON.stringify(tokenOut || "ugnot")}, ${amountOut || "0"})`);
+  return { amountIn: String(inn), amountOut: String(amountOut || "0"), source: "chain" };
+}
+
 export async function loadWallet(net, pkg, addr, live) {
   let coins = "0ugnot";
   try {
@@ -738,11 +746,20 @@ export async function preflight(netId, q) {
   const p = (live.pools || []).find((x) => x.id === q.pool);
   if (!p) errors.push("pool_not_found");
   let amountOut = "0";
+  let amountIn = String(q.amountIn || "0");
+  const exactOut = Boolean(q.amountOut && q.tokenOut);
   if (p) {
     try {
-      amountOut = String(
-        await qeval(net, pkg, `Quote(${JSON.stringify(q.pool)}, ${JSON.stringify(q.tokenIn || "ugnot")}, ${q.amountIn || "0"})`),
-      );
+      if (exactOut) {
+        amountIn = String(
+          await qeval(net, pkg, `QuoteIn(${JSON.stringify(q.pool)}, ${JSON.stringify(q.tokenOut)}, ${q.amountOut || "0"})`),
+        );
+        amountOut = String(q.amountOut);
+      } else {
+        amountOut = String(
+          await qeval(net, pkg, `Quote(${JSON.stringify(q.pool)}, ${JSON.stringify(q.tokenIn || "ugnot")}, ${q.amountIn || "0"})`),
+        );
+      }
     } catch (e) {
       errors.push("quote_failed");
       warnings.push(String(e.message || e));
@@ -754,20 +771,23 @@ export async function preflight(netId, q) {
     const cap = Math.floor((Number(p.reserveT) * Number(p.snipeMaxBps || 0)) / 10000);
     if (q.tokenIn === "ugnot" && cap > 0 && Number(amountOut) > cap) errors.push("snipe_cap");
   }
-  if (q.addr && q.tokenIn === "ugnot" && q.amountIn) {
+  const payU = exactOut ? String(q.maxIn || amountIn) : amountIn;
+  if (q.addr && q.tokenIn === "ugnot" && payU) {
     try {
       const w = await loadWallet(net, pkg, q.addr, live);
       const m = String(w.coins).match(/(\d+)/);
       const bal = BigInt(m ? m[1] : "0");
-      if (bal < BigInt(q.amountIn)) errors.push("insufficient_gnot");
+      if (bal < BigInt(payU)) errors.push("insufficient_gnot");
     } catch {
       warnings.push("balance_unknown");
     }
   }
-  if (q.minOut && BigInt(amountOut || "0") < BigInt(q.minOut)) errors.push("slippage");
+  if (exactOut && q.maxIn && BigInt(amountIn || "0") > BigInt(q.maxIn)) errors.push("slippage");
+  else if (!exactOut && q.minOut && BigInt(amountOut || "0") < BigInt(q.minOut)) errors.push("slippage");
   return {
     ok: errors.length === 0,
     amountOut,
+    amountIn,
     source: "chain",
     warnings,
     errors,
@@ -1020,6 +1040,11 @@ export async function dispatch(pathname, search) {
   }
   if (pathname === "/api/quote") {
     const pool = search.get("pool") || "";
+    const amountOut = search.get("amountOut") || "";
+    if (amountOut) {
+      const tokenOut = search.get("tokenOut") || "ugnot";
+      return { status: 200, body: await quoteExactOut(net.id, pool, tokenOut, amountOut, pkgParam) };
+    }
     const tokenIn = search.get("tokenIn") || "ugnot";
     const amountIn = search.get("amountIn") || "0";
     return { status: 200, body: await quoteExactIn(net.id, pool, tokenIn, amountIn, pkgParam) };
@@ -1047,6 +1072,9 @@ export async function dispatch(pathname, search) {
         tokenIn: search.get("tokenIn") || "ugnot",
         amountIn: search.get("amountIn") || "0",
         minOut: search.get("minOut") || "",
+        amountOut: search.get("amountOut") || "",
+        tokenOut: search.get("tokenOut") || "",
+        maxIn: search.get("maxIn") || "",
         addr: search.get("addr") || "",
       }),
     };

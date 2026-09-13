@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useDex } from "../context";
 import { errText } from "../i18n";
-import { mulDiv, quoteInLocal, quoteLocal } from "../lib/amm";
+import { exactOutPlan, mulDiv, quoteLocal } from "../lib/amm";
 import { api } from "../lib/api";
 import { UGNOT, fmtGnot, fmtInt, parseUgnot, toUgnot } from "../lib/format";
 import TokenAvatar from "./TokenAvatar";
@@ -10,6 +10,7 @@ import TokenPicker from "./TokenPicker";
 type Preflight = {
   ok: boolean;
   amountOut: string;
+  amountIn?: string;
   warnings: string[];
   errors: string[];
 };
@@ -42,14 +43,19 @@ export default function Swap() {
     if (exactOut && exactOk) {
       const raw = String(amountOut || "0").replace(/,/g, "");
       const want = tokenIn === "ugnot" ? BigInt(Math.max(0, Number(raw) || 0)) : toUgnot(raw);
-      const tokenOut = tokenIn === "ugnot" ? pool.symbol : "ugnot";
-      const inn = quoteInLocal(pool, tokenOut, want);
+      const plan = exactOutPlan(pool, tokenIn, want, slip);
+      if (!plan) {
+        return { inn: 0n, out: 0n, maxIn: 0n, slipHint: "—", impact: "—", impactCls: "", feeTxt, spot, bal, inDisplay: "", outDisplay: amountOut, min: 0n, source: "local" as const, tokenOut: tokenIn === "ugnot" ? pool.symbol : "ugnot" };
+      }
+      const inn = chainOut != null ? BigInt(chainOut) : plan.inn;
       const maxIn = inn + mulDiv(inn, slip, 10000n);
       return {
         inn,
-        out: want,
-        slipHint: tokenIn === "ugnot" ? fmtGnot(maxIn) + " GNOT max" : fmtInt(maxIn) + " max",
-        impact: "exact out",
+        out: plan.out,
+        maxIn,
+        tokenOut: plan.tokenOut,
+        slipHint: tokenIn === "ugnot" ? fmtGnot(maxIn) + " GNOT" : fmtInt(maxIn),
+        impact: d.exactOut,
         impactCls: "",
         feeTxt,
         spot,
@@ -57,7 +63,7 @@ export default function Swap() {
         inDisplay: tokenIn === "ugnot" ? fmtGnot(inn).replace(/,/g, "") : inn.toString(),
         outDisplay: amountOut,
         min: 0n,
-        source: "local" as const,
+        source: chainOut != null ? ("chain" as const) : ("local" as const),
       };
     }
     const inn = tokenIn === "ugnot" ? toUgnot(amountIn) : BigInt(Math.max(0, Number(amountIn) || 0));
@@ -86,10 +92,32 @@ export default function Swap() {
       min,
       source: chainOut != null ? ("chain" as const) : ("local" as const),
     };
-  }, [pool, tokenIn, amountIn, amountOut, slippage, exactOut, exactOk, wallet, chainOut]);
+  }, [pool, tokenIn, amountIn, amountOut, slippage, exactOut, exactOk, wallet, chainOut, d.exactOut]);
 
   useEffect(() => {
-    if (!pool || exactOut || !quote?.inn) {
+    if (!pool) {
+      setChainOut(null);
+      return;
+    }
+    if (exactOut && exactOk) {
+      const raw = String(amountOut || "0").replace(/,/g, "");
+      const want = tokenIn === "ugnot" ? BigInt(Math.max(0, Number(raw) || 0)) : toUgnot(raw);
+      if (want <= 0n) {
+        setChainOut(null);
+        return;
+      }
+      const tokenOut = tokenIn === "ugnot" ? pool.symbol : "ugnot";
+      const t = setTimeout(() => {
+        void api<{ amountIn: string }>(
+          `/api/quote?pool=${encodeURIComponent(pool.id)}&tokenOut=${encodeURIComponent(tokenOut)}&amountOut=${want.toString()}`,
+          netId,
+        )
+          .then((j) => setChainOut(String(j.amountIn)))
+          .catch(() => setChainOut(null));
+      }, 180);
+      return () => clearTimeout(t);
+    }
+    if (!quote?.inn) {
       setChainOut(null);
       return;
     }
@@ -103,7 +131,7 @@ export default function Swap() {
         .catch(() => setChainOut(null));
     }, 180);
     return () => clearTimeout(t);
-  }, [pool, tokenIn, amountIn, exactOut, quote?.inn, netId]);
+  }, [pool, tokenIn, amountIn, amountOut, exactOut, exactOk, quote?.inn, netId]);
 
   const h = Number(live.realmHeight || 0);
   const bits: string[] = [];
@@ -131,10 +159,20 @@ export default function Swap() {
   async function openConfirm() {
     if (!pool || !quote) return toast(d.noPool, "err");
     try {
-      const pf = await api<Preflight>(
-        `/api/preflight?pool=${encodeURIComponent(pool.id)}&tokenIn=${encodeURIComponent(tokenIn)}&amountIn=${quote.inn.toString()}&minOut=${(quote.min || 0n).toString()}&addr=${encodeURIComponent(walletAddr)}`,
-        netId,
-      );
+      const qs = new URLSearchParams({
+        pool: pool.id,
+        tokenIn,
+        addr: walletAddr,
+      });
+      if (exactOut && exactOk) {
+        qs.set("tokenOut", quote.tokenOut || (tokenIn === "ugnot" ? pool.symbol : "ugnot"));
+        qs.set("amountOut", quote.out.toString());
+        qs.set("maxIn", (quote.maxIn || quote.inn).toString());
+      } else {
+        qs.set("amountIn", quote.inn.toString());
+        qs.set("minOut", (quote.min || 0n).toString());
+      }
+      const pf = await api<Preflight>(`/api/preflight?${qs.toString()}`, netId);
       setConfirm(pf);
     } catch (e) {
       toast(e instanceof Error ? e.message : String(e), "err");
@@ -145,6 +183,19 @@ export default function Swap() {
     if (!pool || !quote) return;
     setConfirm(null);
     try {
+      if (exactOut && exactOk) {
+        const tokenOut = quote.tokenOut || (tokenIn === "ugnot" ? pool.symbol : "ugnot");
+        const maxIn = quote.maxIn || quote.inn;
+        if (quote.out <= 0n || maxIn <= 0n) throw new Error("amountOut = 0");
+        await runTx("SwapExactOut", () =>
+          call(
+            "SwapExactOut",
+            [pool.id, tokenOut, quote.out.toString(), maxIn.toString(), deadline],
+            tokenOut !== "ugnot" ? `${maxIn.toString()}ugnot` : "",
+          ),
+        );
+        return;
+      }
       await runTx("SwapExactIn", async () => {
         if (quote.inn <= 0n) throw new Error("amountIn = 0");
         return call(
@@ -274,7 +325,7 @@ export default function Swap() {
         <button
           className="btn primary swap-cta"
           type="button"
-          disabled={!!busy || !pool || (Boolean(walletAddr) && !(quote && quote.inn > 0n))}
+          disabled={!!busy || !pool || (Boolean(walletAddr) && !(quote && (exactOut && exactOk ? quote.out > 0n : quote.inn > 0n)))}
           onClick={() => void openConfirm()}
         >
           {cta}
@@ -291,7 +342,7 @@ export default function Swap() {
               <b className={quote?.impactCls}>{quote?.impact || "—"}</b>
             </div>
             <div>
-              <span>{d.minOut}</span>
+              <span>{exactOut && exactOk ? d.maxIn : d.minOut}</span>
               <b className="mono">{quote?.slipHint || "—"}</b>
             </div>
             <div>
@@ -338,7 +389,8 @@ export default function Swap() {
           <div className="card modal-card" onClick={(e) => e.stopPropagation()}>
             <h2>{d.confirmSwap}</h2>
             <p className="hint">
-              {d.sell} {tokenIn === "ugnot" ? fmtGnot(quote?.inn || 0n) : fmtInt(quote?.inn || 0n)} {inSym}
+              {d.sell} {tokenIn === "ugnot" ? fmtGnot(BigInt(confirm.amountIn || quote?.inn || 0n)) : fmtInt(confirm.amountIn || quote?.inn || 0n)} {inSym}
+              {exactOut && exactOk ? ` (${d.maxIn} ${quote?.slipHint})` : ""}
             </p>
             <p className="hint">
               {d.buy} {tokenIn === "ugnot" ? fmtInt(confirm.amountOut) : fmtGnot(confirm.amountOut)} {outSym}

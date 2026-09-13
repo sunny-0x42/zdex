@@ -41,6 +41,21 @@ export function quoteLocal(p: Pool | null | undefined, tokenIn: string, amountIn
   return amountOut(amountIn, rt, 0n, ru, 0n, fee);
 }
 
+/** tokenOut is the asset received: pool symbol or "ugnot". maxIn includes slippage. */
+export function exactOutPlan(
+  p: Pool | null | undefined,
+  tokenIn: string,
+  amountOutWanted: bigint,
+  slipBps: bigint,
+): { tokenOut: string; inn: bigint; maxIn: bigint; out: bigint } | null {
+  if (!p || amountOutWanted <= 0n) return null;
+  const tokenOut = tokenIn === "ugnot" ? p.symbol : "ugnot";
+  const inn = quoteInLocal(p, tokenOut, amountOutWanted);
+  if (inn <= 0n) return null;
+  const maxIn = inn + mulDiv(inn, slipBps, 10000n);
+  return { tokenOut, inn, maxIn, out: amountOutWanted };
+}
+
 export function quoteInLocal(p: Pool | null | undefined, tokenOut: string, amountOutWanted: bigint): bigint {
   if (!p || amountOutWanted <= 0n) return 0n;
   const ru = BigInt(p.reserveU);
