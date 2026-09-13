@@ -31,7 +31,7 @@ export default function Header() {
   const dot = liveState === "on" && !stale ? "on" : liveState === "err" || stale ? "err" : "";
   const connected = account && account.source === "adena";
   const primary = TABS.filter((name) => PRIMARY_TABS.includes(name));
-  const extra: Tab[] = [...TABS.filter((name) => !PRIMARY_TABS.includes(name)), "stats", "create"];
+  const extra: Tab[] = [...TABS.filter((name) => !PRIMARY_TABS.includes(name)), "create"];
 
   return (
     <header className="top">
