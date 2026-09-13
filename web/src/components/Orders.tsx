@@ -1,16 +1,42 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useDex } from "../context";
+import { api } from "../lib/api";
 import { ammGnotPerToken, bests, bookPriceGnotPerToken, splitBook } from "../lib/book";
-import { fmtGnot, fmtInt, toTokenBase, toUgnot } from "../lib/format";
-import type { Order } from "../types";
+import { fmtInt, tokenPkgFromKey, toTokenBase, toUgnot } from "../lib/format";
+import type { ChainToken, Order } from "../types";
 
 export default function Orders() {
-  const { live, pools, pool, setPoolId, busy, runTx, call, d, walletAddr } = useDex();
+  const { live, pools, pool, setPoolId, busy, runTx, call, d, walletAddr, netId, pkg } = useDex();
   const [side, setSide] = useState<"bid" | "ask">("bid");
   const [gnotAmt, setGnotAmt] = useState("1");
   const [tokAmt, setTokAmt] = useState("1000");
   const [exp, setExp] = useState("0");
-  const decimals = pool?.decimals || 6;
+  const [realmAddr, setRealmAddr] = useState("");
+  const [catalog, setCatalog] = useState<ChainToken[]>([]);
+  const [approved, setApproved] = useState(false);
+  useEffect(() => {
+    let on = true;
+    void api<{ tokens?: ChainToken[]; realmAddr?: string }>("/api/tokens", netId)
+      .then((j) => {
+        if (!on) return;
+        setCatalog(j.tokens || []);
+        if (j.realmAddr) setRealmAddr(j.realmAddr);
+      })
+      .catch(() => {});
+    return () => {
+      on = false;
+    };
+  }, [netId, pkg]);
+
+  useEffect(() => {
+    setApproved(false);
+  }, [pool?.id, side]);
+
+  const tokMeta = catalog.find((t) => t.symbol === pool?.symbol);
+  const tokPkg = tokMeta ? tokenPkgFromKey(tokMeta.key) : pool?.key ? tokenPkgFromKey(pool.key) : "";
+  const external = Boolean(pool && tokPkg && tokMeta && !tokMeta.internal);
+  const needApprove = external && (side === "ask");
+  const decimals = pool?.decimals || tokMeta?.decimals || 6;
   const { bids, asks } = splitBook(live.orders, pool?.id);
   const { bid, ask, mid } = bests(bids, asks);
   const amm = pool ? ammGnotPerToken(pool.reserveU, pool.reserveT) : 0;
@@ -18,9 +44,23 @@ export default function Orders() {
   const giveT = toTokenBase(tokAmt, decimals);
   const px = side === "bid" ? (giveT > 0n ? Number(giveU) / Number(giveT) : 0) : giveT > 0n ? Number(giveU) / Number(giveT) : 0;
 
+  async function approveTok(amount: string) {
+    if (!tokPkg || !realmAddr) throw new Error(d.approveNeedPkg);
+    await runTx("Approve", () => call("Approve", [realmAddr, amount], "", tokPkg));
+    setApproved(true);
+  }
+
   function fill(o: Order) {
     const pay = o.wantAmt;
-    return runTx("Fill", () => call("FillOrder", [o.id, pay], o.side === "ask" ? `${pay}ugnot` : "")).catch(() => {});
+    const send = o.side === "ask" ? `${pay}ugnot` : "";
+    const run = () => call("FillOrder", [o.id, pay], send);
+    if (o.side === "bid" && external && !approved) {
+      return runTx("Fill", async () => {
+        await approveTok(pay);
+        return run();
+      }).catch(() => {});
+    }
+    return runTx("Fill", run).catch(() => {});
   }
 
   return (
@@ -55,10 +95,21 @@ export default function Orders() {
         <p className="hint">
           {d.limitPx} {px > 0 ? px.toPrecision(6) : "—"} GNOT
         </p>
+        {needApprove && !approved ? <p className="hint">{d.approveAsk}</p> : null}
+        {needApprove ? (
+          <button
+            className="btn ghost wide"
+            type="button"
+            disabled={!!busy || !pool || !realmAddr || !tokPkg || giveT <= 0n}
+            onClick={() => void approveTok(giveT.toString()).catch(() => {})}
+          >
+            {d.approveFirst}
+          </button>
+        ) : null}
         <button
           className="btn primary wide"
           type="button"
-          disabled={!!busy || !pool || giveU <= 0n || giveT <= 0n}
+          disabled={!!busy || !pool || giveU <= 0n || giveT <= 0n || (needApprove && !approved)}
           onClick={() =>
             void runTx("Order", () =>
               call(

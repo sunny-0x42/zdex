@@ -16,6 +16,7 @@ export default function CreatePool() {
   const [feeBps, setFeeBps] = useState("30");
   const [realmAddr, setRealmAddr] = useState("");
   const [approved, setApproved] = useState(false);
+  const [waitId, setWaitId] = useState("");
 
   useEffect(() => {
     let on = true;
@@ -31,12 +32,20 @@ export default function CreatePool() {
     };
   }, [netId, pkg]);
 
+  useEffect(() => {
+    if (!waitId) return;
+    if (live.pools?.some((p) => p.id === waitId)) {
+      addLp(waitId);
+      setWaitId("");
+    }
+  }, [live.pools, waitId, addLp]);
+
   const u = toUgnot(gnot);
   const decimals = resolved?.decimals || 0;
   const tokenBase = toTokenBase(tokenAmt, decimals);
   const tokPkg = resolved ? tokenPkgFromKey(resolved.key) : "";
   const canSign = Boolean(account && account.source === "adena" && !previewing);
-  const { approveReady, createReady } = createPoolGates({
+  const { approveReady, createReady, addExisting } = createPoolGates({
     resolved,
     gnotUgnot: u,
     tokenBase,
@@ -61,19 +70,15 @@ export default function CreatePool() {
         setLookupErr(d.tokenNotFound);
         return;
       }
-      if (j.pooled) {
-        setResolved(null);
-        setLookupErr(d.poolExists);
-        return;
-      }
       setApproved(false);
       setResolved({
         symbol: j.symbol,
         name: j.name || j.symbol,
         key: j.key || ref,
-        decimals: j.decimals || 0,
-        pooled: false,
+        decimals: Number(j.decimals || 0),
+        pooled: Boolean(j.pooled),
         internal: Boolean(j.internal),
+        poolId: j.pooled ? j.poolId || `ugnot|${j.symbol}` : undefined,
       });
       if (j.realmAddr) setRealmAddr(j.realmAddr);
     } catch {
@@ -97,7 +102,7 @@ export default function CreatePool() {
     await runTx("CreatePool", () =>
       call("CreatePool", [key, resolved.symbol, u.toString(), tokenBase.toString(), feeBps], `${u.toString()}ugnot`),
     );
-    addLp(`ugnot|${resolved.symbol}`);
+    setWaitId(`ugnot|${resolved.symbol}`);
   }
 
   return (
@@ -164,16 +169,25 @@ export default function CreatePool() {
           {d.minList} · {d.createThenFund}
         </p>
         {!canSign ? <p className="hint">{d.connectToSign}</p> : null}
-        {resolved && !resolved.internal && !approved ? <p className="hint">{d.approveThenCreate}</p> : null}
+        {resolved && !resolved.internal && !resolved.pooled && !approved ? <p className="hint">{d.approveThenCreate}</p> : null}
         {resolved && !resolved.internal && approved ? <p className="hint">{d.approved}</p> : null}
-        {resolved && !resolved.internal ? (
+        {resolved && !resolved.internal && !resolved.decimals ? <p className="hint">{d.needDecimals}</p> : null}
+        {addExisting ? <p className="hint">{d.poolExists}</p> : null}
+        {waitId ? <p className="hint">{d.waitingPool}</p> : null}
+        {resolved && !resolved.internal && !addExisting ? (
           <button className="btn ghost wide" type="button" disabled={!!busy || !approveReady} onClick={() => void approve().catch(() => {})}>
             {d.approveFirst}
           </button>
         ) : null}
-        <button className="btn primary wide" type="button" disabled={!!busy || !createReady} onClick={() => void create().catch(() => {})}>
-          {busy || d.createPool}
-        </button>
+        {addExisting ? (
+          <button className="btn primary wide" type="button" onClick={() => addLp(resolved!.poolId || `ugnot|${resolved!.symbol}`)}>
+            {d.addLiq}
+          </button>
+        ) : (
+          <button className="btn primary wide" type="button" disabled={!!busy || !createReady} onClick={() => void create().catch(() => {})}>
+            {busy || d.createPool}
+          </button>
+        )}
         {listed ? (
           <button className="btn ghost wide" type="button" onClick={() => addLp(`ugnot|${resolved!.symbol}`)}>
             {d.fundGauge} →

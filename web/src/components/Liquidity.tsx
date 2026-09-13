@@ -6,6 +6,7 @@ import { fmtGnot, fmtInt, toTokenBase, toUgnot, tokenPkgFromKey } from "../lib/f
 import { createPoolGates } from "../lib/createPoolGate";
 import { isIncentivized } from "../lib/hub";
 import type { ChainToken, Pool } from "../types";
+import CreatePool from "./CreatePool";
 import GaugePanel from "./GaugePanel";
 import { PairAvatars, TokenChip } from "./TokenAvatar";
 import TokenPicker from "./TokenPicker";
@@ -16,8 +17,8 @@ function poolStatus(p: Pool, height: number, d: { lpLocked: string; noLpSeed: st
   return { ok: true, label: d.canAdd };
 }
 
-export default function Liquidity() {
-  const { pools, pool, setPoolId, wallet, walletAddr, busy, runTx, call, d, live, netId, pkg, account, previewing } = useDex();
+export default function Liquidity({ listing = false }: { listing?: boolean }) {
+  const { pools, pool, setPoolId, wallet, walletAddr, busy, runTx, call, d, live, netId, pkg, account, previewing, addLp } = useDex();
   const [catalog, setCatalog] = useState<ChainToken[]>([]);
   const [realmAddr, setRealmAddr] = useState("");
   const [pick, setPick] = useState(pool?.symbol || "");
@@ -30,6 +31,7 @@ export default function Liquidity() {
   const [burn, setBurn] = useState("0");
   const [approved, setApproved] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [waitId, setWaitId] = useState("");
 
   const height = Number(live.realmHeight || live.height || 0);
   const u = toUgnot(gnot);
@@ -57,6 +59,14 @@ export default function Liquidity() {
       on = false;
     };
   }, [netId, pkg, live.ts]);
+
+  useEffect(() => {
+    if (!waitId) return;
+    if (pools.some((p) => p.id === waitId)) {
+      addLp(waitId);
+      setWaitId("");
+    }
+  }, [pools, waitId, addLp]);
 
   const options = useMemo(() => {
     const by = new Map<string, ChainToken>();
@@ -138,6 +148,7 @@ export default function Liquidity() {
       await runTx("CreatePool", () =>
         call("CreatePool", [key, resolved.symbol, u.toString(), tAmt, feeBps], `${u.toString()}ugnot`),
       );
+      setWaitId(`ugnot|${resolved.symbol}`);
     }
   }
 
@@ -161,9 +172,18 @@ export default function Liquidity() {
       (isNew && (!tokenAmt.trim() || u < 1_000_000n || !newGates.createReady)),
   );
 
+  if (listing) {
+    return (
+      <section>
+        <CreatePool />
+      </section>
+    );
+  }
+
   return (
     <section>
       <p className="lede">{d.noStakeHint}</p>
+      {waitId ? <p className="hint">{d.waitingPool}</p> : null}
       <div className="grid">
         <div className="card">
           <div className="card-head">
@@ -273,6 +293,7 @@ export default function Liquidity() {
               {d.approveFirst}
             </button>
           ) : null}
+          {isNew && resolved && !resolved.internal && !resolved.decimals ? <p className="hint">{d.needDecimals}</p> : null}
           {isNew && resolved && !resolved.internal && !approved ? <p className="hint">{d.approveThenCreate}</p> : null}
           <button
             className="btn primary wide"

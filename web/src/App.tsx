@@ -1,7 +1,6 @@
 import BottomNav from "./components/BottomNav";
 import Footer from "./components/Footer";
 import Header from "./components/Header";
-import CreatePool from "./components/CreatePool";
 import Guide from "./components/Guide";
 import Liquidity from "./components/Liquidity";
 import Markets from "./components/Markets";
@@ -57,9 +56,8 @@ export default function App() {
         {liveState === "connecting" && !live.pools?.length ? <div className="skeleton" /> : null}
         {tab === "swap" ? <Swap /> : null}
         {tab === "pools" ? <Markets /> : null}
-        {tab === "liq" ? <Liquidity /> : null}
+        {tab === "liq" || tab === "create" ? <Liquidity listing={tab === "create"} /> : null}
         {tab === "book" ? <Orders /> : null}
-        {tab === "create" ? <CreatePool /> : null}
         {tab === "port" ? <Portfolio /> : null}
         {tab === "stats" ? <Stats /> : null}
         {tab === "guide" ? <Guide /> : null}

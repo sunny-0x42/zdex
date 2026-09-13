@@ -3,7 +3,8 @@ import { useDex } from "../context";
 import { errText } from "../i18n";
 import { exactOutPlan, mulDiv, quoteLocal } from "../lib/amm";
 import { api } from "../lib/api";
-import { UGNOT, fmtGnot, fmtInt, parseUgnot, toUgnot } from "../lib/format";
+import { UGNOT, fmtGnot, fmtInt, parseUgnot, tokenPkgFromKey, toUgnot } from "../lib/format";
+import type { ChainToken } from "../types";
 import TokenAvatar from "./TokenAvatar";
 import TokenPicker from "./TokenPicker";
 
@@ -29,7 +30,31 @@ export default function Swap() {
   const [settings, setSettings] = useState(false);
   const [details, setDetails] = useState(false);
   const [pick, setPick] = useState<PickSide>(null);
+  const [realmAddr, setRealmAddr] = useState("");
+  const [catalog, setCatalog] = useState<ChainToken[]>([]);
+  const [approvedSell, setApprovedSell] = useState(false);
 
+  useEffect(() => {
+    let on = true;
+    void api<{ tokens?: ChainToken[]; realmAddr?: string }>("/api/tokens", netId)
+      .then((j) => {
+        if (!on) return;
+        setCatalog(j.tokens || []);
+        if (j.realmAddr) setRealmAddr(j.realmAddr);
+      })
+      .catch(() => {});
+    return () => {
+      on = false;
+    };
+  }, [netId]);
+
+  useEffect(() => {
+    setApprovedSell(false);
+  }, [tokenIn, pool?.id]);
+
+  const tokMeta = catalog.find((t) => t.symbol === pool?.symbol);
+  const sellPkg = tokMeta && !tokMeta.internal ? tokenPkgFromKey(tokMeta.key) : "";
+  const needSellApprove = tokenIn !== "ugnot" && Boolean(sellPkg && realmAddr);
   const outSym = tokenIn === "ugnot" ? pool?.symbol || "token" : "GNOT";
   const inSym = tokenIn === "ugnot" ? "GNOT" : pool?.symbol || "token";
   const exactOk = !!live.caps?.exactOut;
@@ -183,6 +208,11 @@ export default function Swap() {
     if (!pool || !quote) return;
     setConfirm(null);
     try {
+      if (needSellApprove && !approvedSell) {
+        const amt = exactOut && exactOk ? (quote.maxIn || quote.inn).toString() : quote.inn.toString();
+        await runTx("Approve", () => call("Approve", [realmAddr, amt], "", sellPkg));
+        setApprovedSell(true);
+      }
       if (exactOut && exactOk) {
         const tokenOut = quote.tokenOut || (tokenIn === "ugnot" ? pool.symbol : "ugnot");
         const maxIn = quote.maxIn || quote.inn;
