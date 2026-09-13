@@ -6,7 +6,7 @@ import (
 )
 
 func Render(path string) string {
-	out := "# zdex incentives v2\n\n"
+	out := "# zdex incentives v3\n\n"
 	out += "Sidecar gauges on DexPkg. Native `ugnot` via OriginSend. Lump `Fund` or timed `FundProgram`. LP Claim uses LastLP; does not call zdex swap or LP.\n\n"
 	if paused {
 		out += "> [!CAUTION]\n> Funding is paused. Claim still works.\n\n"

@@ -24,6 +24,7 @@ export type Network = {
   hubPkg?: string;
   incentivesPkg?: string;
   incentivesV2Pkg?: string;
+  incentivesV3Pkg?: string;
   viewAddr: string;
 };
 
@@ -125,6 +126,8 @@ export type Live = {
   incentivesPkg?: string;
   incentivesV2Pkg?: string;
   incentivesV2Live?: boolean;
+  incentivesV3Pkg?: string;
+  incentivesV3Live?: boolean;
   gauges?: Gauge[];
   error?: string;
 };

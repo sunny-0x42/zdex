@@ -383,6 +383,7 @@ async function loadIncentivesPkg(net, pkg) {
 async function loadIncentives(net) {
   const gauges = [];
   let v2Live = false;
+  let v3Live = false;
   if (net.incentivesPkg) gauges.push(...(await loadIncentivesPkg(net, net.incentivesPkg)));
   if (net.incentivesV2Pkg) {
     try {
@@ -393,7 +394,16 @@ async function loadIncentives(net) {
     }
     if (v2Live) gauges.push(...(await loadIncentivesPkg(net, net.incentivesV2Pkg)));
   }
-  return { pkg: net.incentivesPkg || "", gauges, v2Live };
+  if (net.incentivesV3Pkg) {
+    try {
+      const ver = String(await qeval(net, net.incentivesV3Pkg, "Version()"));
+      v3Live = Boolean(ver);
+    } catch {
+      v3Live = false;
+    }
+    if (v3Live) gauges.push(...(await loadIncentivesPkg(net, net.incentivesV3Pkg)));
+  }
+  return { pkg: net.incentivesPkg || "", gauges, v2Live, v3Live };
 }
 
 async function attachQuotes(net, pkg, netId, pools) {
@@ -569,6 +579,8 @@ export async function loadLive(netId, pkgOverride) {
     incentivesPkg: net.incentivesPkg || "",
     incentivesV2Pkg: net.incentivesV2Pkg || "",
     incentivesV2Live: Boolean(incentives.v2Live),
+    incentivesV3Pkg: net.incentivesV3Pkg || "",
+    incentivesV3Live: Boolean(incentives.v3Live),
     gauges: incentives.gauges || [],
     error: mode === "v1" && /not declared/i.test(err) ? "" : err && mode === "v2" ? err : "",
   };

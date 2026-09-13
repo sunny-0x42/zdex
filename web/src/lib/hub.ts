@@ -100,6 +100,7 @@ export function pkgForFunc(live: Live | undefined, func: string, fallback: strin
   const surface = FUNC_SURFACE[func] || "admin";
   if (surface === "incentives") {
     if (func === "Fund" || func === "FundProgram") {
+      if (live?.incentivesV3Live && live.incentivesV3Pkg) return live.incentivesV3Pkg;
       if (live?.incentivesV2Live && live.incentivesV2Pkg) return live.incentivesV2Pkg;
       return live?.modules?.incentives || live?.incentivesPkg || incentivesPkg || "";
     }

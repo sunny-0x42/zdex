@@ -5,8 +5,8 @@ import (
 	"chain/banker"
 	"chain/runtime/unsafe"
 
-	"gno.land/p/zdex/amm/v1"
-	"gno.land/r/zdex/v2"
+	"gno.land/p/g1mv0052e7r6s09f5t9xsqf00nj3tqsgt9dg52jr/zdex/amm/v1"
+	"gno.land/r/g1mv0052e7r6s09f5t9xsqf00nj3tqsgt9dg52jr/zdex/v2"
 )
 
 func takeFund(cur realm, poolID string) (sent int64, g *Gauge) {

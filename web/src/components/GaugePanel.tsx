@@ -80,7 +80,7 @@ export default function GaugePanel({ pool }: { pool: Pool | null }) {
       <label>{d.fundAmt}</label>
       <input type="number" min="1" step="any" value={amt} onChange={(e) => setAmt(e.target.value)} />
       <p className="hint">{d.minFund}</p>
-      {live.incentivesV2Live ? (
+      {live.incentivesV3Live || live.incentivesV2Live ? (
         <>
           <label>{d.programDays}</label>
           <select value={days} onChange={(e) => setDays(e.target.value)}>
@@ -132,7 +132,13 @@ export default function GaugePanel({ pool }: { pool: Pool | null }) {
           type="button"
           disabled={!!busy || !pool || !canSign}
           onClick={() =>
-            void runTx("Sync", () => call("Sync", [pool!.id], "", gauge?.pkg || "")).catch(() => {})
+            void runTx("Sync", async () => {
+              const rows = (live.gauges || []).filter((g) => g.id === pool!.id);
+              const pkgs = rows.length ? rows.map((g) => g.pkg || "") : [gauge?.pkg || ""];
+              let last = await call("Sync", [pool!.id], "", pkgs[0]);
+              for (const pkg of pkgs.slice(1)) last = await call("Sync", [pool!.id], "", pkg);
+              return last;
+            }).catch(() => {})
           }
         >
           {d.syncGauge}

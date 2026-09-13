@@ -92,6 +92,25 @@ describe("hub", () => {
     );
   });
 
+  it("routes Fund and FundProgram to incentives v3 when live", () => {
+    const live = {
+      pools: [],
+      orders: [],
+      ok: true,
+      pkg: "gno.land/r/zdex",
+      incentivesV2Live: true,
+      incentivesV2Pkg: "gno.land/r/zdex/incentives/v2",
+      incentivesV3Live: true,
+      incentivesV3Pkg: "gno.land/r/zdex/incentives/v3",
+      incentivesPkg: "gno.land/r/zdex/incentives/v1",
+    };
+    expect(pkgForFunc(live, "Fund", "gno.land/r/zdex", live.incentivesPkg)).toBe("gno.land/r/zdex/incentives/v3");
+    expect(pkgForFunc(live, "FundProgram", "gno.land/r/zdex", live.incentivesPkg)).toBe(
+      "gno.land/r/zdex/incentives/v3",
+    );
+    expect(pkgForFunc(live, "Claim", "gno.land/r/zdex", live.incentivesPkg)).toBe("gno.land/r/zdex/incentives/v1");
+  });
+
   it("parses GaugeList and GaugeSnapshot", () => {
     expect(parseGaugeList("ugnot|ZTT\nugnot|DEMO")).toEqual(["ugnot|ZTT", "ugnot|DEMO"]);
     expect(parseGaugeList("ugnot|ZTT;100;5000000;1;0")).toEqual(["ugnot|ZTT"]);

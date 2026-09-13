@@ -274,6 +274,30 @@ func TestFundProgramClaimAfterRemoveForfeits(cur realm, t *testing.T) {
 	uassert.Equal(t, int64(0), Claim(cross(cur), id))
 }
 
+func TestFundProgramStacksRemaining(cur realm, t *testing.T) {
+	resetAll()
+	fundPkgs(t)
+	id := launchPool(cur, t, "INCST")
+	alice := testutils.TestAddress("alice")
+	testing.SetRealm(testing.NewUserRealm(alice))
+	testing.SetOriginSend(chain.Coins{{Denom: nativeDenom, Amount: 2_880_000}})
+	FundProgram(cross(cur), id, 28800)
+	parts := strings.Split(GaugeSnapshot(id), ";")
+	uassert.Equal(t, "2880000", parts[7])
+	uassert.Equal(t, "100", parts[6])
+
+	testing.SkipHeights(1000)
+	testing.SetRealm(testing.NewUserRealm(alice))
+	testing.SetOriginSend(chain.Coins{{Denom: nativeDenom, Amount: 2_880_000}})
+	FundProgram(cross(cur), id, 28800)
+	after := strings.Split(GaugeSnapshot(id), ";")
+	rem := after[7]
+	uassert.True(t, rem != "2880000", "leftover stacked, not overwritten")
+	uassert.True(t, rem != "0" && rem != "", "remaining set")
+	funded := after[2]
+	uassert.Equal(t, "5760000", funded)
+}
+
 func TestFundProgramDurationPanics(cur realm, t *testing.T) {
 	resetAll()
 	fundPkgs(t)
