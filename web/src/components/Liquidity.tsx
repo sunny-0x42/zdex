@@ -3,6 +3,7 @@ import { useDex } from "../context";
 import { lpFeeAprPct, mulDiv } from "../lib/amm";
 import { api } from "../lib/api";
 import { fmtGnot, fmtInt, toTokenBase, toUgnot, tokenPkgFromKey } from "../lib/format";
+import { createPoolGates } from "../lib/createPoolGate";
 import { isIncentivized } from "../lib/hub";
 import type { ChainToken, Pool } from "../types";
 import GaugePanel from "./GaugePanel";
@@ -15,7 +16,7 @@ function poolStatus(p: Pool, height: number, d: { lpLocked: string; noLpSeed: st
 }
 
 export default function Liquidity() {
-  const { pools, pool, setPoolId, wallet, walletAddr, busy, runTx, call, d, live, netId, pkg } = useDex();
+  const { pools, pool, setPoolId, wallet, walletAddr, busy, runTx, call, d, live, netId, pkg, account, previewing } = useDex();
   const [catalog, setCatalog] = useState<ChainToken[]>([]);
   const [realmAddr, setRealmAddr] = useState("");
   const [pick, setPick] = useState(pool?.symbol || "");
@@ -26,6 +27,7 @@ export default function Liquidity() {
   const [tokenAmt, setTokenAmt] = useState("");
   const [feeBps, setFeeBps] = useState("30");
   const [burn, setBurn] = useState("0");
+  const [approved, setApproved] = useState(false);
 
   const height = Number(live.realmHeight || live.height || 0);
   const u = toUgnot(gnot);
@@ -75,6 +77,7 @@ export default function Liquidity() {
     setResolved(t);
     setLookupErr("");
     if (t.pooled) setPoolId(`ugnot|${t.symbol}`);
+    setApproved(false);
   }, [pick, options, setPoolId]);
 
   async function lookupCustom() {
@@ -101,6 +104,7 @@ export default function Liquidity() {
         balance: j.balance,
         poolId: j.poolId,
       };
+      setApproved(false);
       setResolved(tok);
       setPick("__custom");
       if (tok.pooled) setPoolId(tok.poolId || `ugnot|${tok.symbol}`);
@@ -117,6 +121,7 @@ export default function Liquidity() {
     const amt = isNew ? toTokenBase(tokenAmt, resolved.decimals || 0).toString() : maxToken;
     if (!spender || !pkgPath) throw new Error(d.approveNeedPkg);
     await runTx("Approve", () => call("Approve", [spender, amt || "0"], "", pkgPath));
+    setApproved(true);
   }
 
   async function add() {
@@ -135,6 +140,24 @@ export default function Liquidity() {
   }
 
   const hint = existing && need > 0n ? `${d.tokenMax} ≈ ${fmtInt(need)} ${existing.symbol}` : isNew ? d.newPair : d.lpHint;
+  const canSign = Boolean(account && account.source === "adena" && !previewing);
+  const tokPkg = resolved ? tokenPkgFromKey(resolved.key) : "";
+  const newGates = createPoolGates({
+    resolved,
+    gnotUgnot: u,
+    tokenBase: resolved ? toTokenBase(tokenAmt, resolved.decimals || 0) : 0n,
+    canSign,
+    tokPkg,
+    realmAddr,
+    approved,
+  });
+  const addDisabled = Boolean(
+    busy ||
+      !resolved ||
+      u <= 0n ||
+      (existing && !st.ok) ||
+      (isNew && (!tokenAmt.trim() || u < 1_000_000n || !newGates.createReady)),
+  );
 
   return (
     <section>
@@ -234,16 +257,17 @@ export default function Liquidity() {
             <button
               className="btn ghost wide"
               type="button"
-              disabled={!!busy || !realmAddr || !tokenPkgFromKey(resolved.key)}
+              disabled={!!busy || (isNew ? !newGates.approveReady : !realmAddr || !tokPkg)}
               onClick={() => void approve().catch(() => {})}
             >
               {d.approveFirst}
             </button>
           ) : null}
+          {isNew && resolved && !resolved.internal && !approved ? <p className="hint">{d.approveThenCreate}</p> : null}
           <button
             className="btn primary wide"
             type="button"
-            disabled={!!busy || !resolved || u <= 0n || (isNew && (!tokenAmt.trim() || u < 1_000_000n)) || Boolean(existing && !st.ok)}
+            disabled={addDisabled}
             onClick={() => void add().catch(() => {})}
           >
             {busy || (isNew ? d.createPool : d.addLiq)}

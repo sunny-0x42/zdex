@@ -66,6 +66,7 @@ export const copy = {
   existingPair: "Adding to the existing GNOT pool at the current ratio.",
   approveFirst: "Approve token",
   approveThenCreate: "Approve the DEX realm on the token, then create the pool.",
+  approved: "Approved",
   gnotSide: "GNOT",
   tokenSide: "Token",
   removeLp: "Remove",

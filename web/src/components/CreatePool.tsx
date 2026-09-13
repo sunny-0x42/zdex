@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { useDex } from "../context";
 import { api } from "../lib/api";
+import { createPoolGates } from "../lib/createPoolGate";
 import { toTokenBase, toUgnot, tokenPkgFromKey } from "../lib/format";
 import type { ChainToken } from "../types";
 import { TokenChip } from "./TokenAvatar";
 
 export default function CreatePool() {
-  const { busy, runTx, call, setTab, addLp, d, netId, walletAddr, account, previewing, pkg } = useDex();
+  const { busy, runTx, call, addLp, d, netId, walletAddr, account, previewing, pkg, live } = useDex();
   const [tokenKey, setTokenKey] = useState("");
   const [resolved, setResolved] = useState<ChainToken | null>(null);
   const [lookupErr, setLookupErr] = useState("");
@@ -35,13 +36,16 @@ export default function CreatePool() {
   const tokenBase = toTokenBase(tokenAmt, decimals);
   const tokPkg = resolved ? tokenPkgFromKey(resolved.key) : "";
   const canSign = Boolean(account && account.source === "adena" && !previewing);
-  const ready = Boolean(
-    resolved &&
-      u >= 1_000_000n &&
-      tokenBase > 0n &&
-      canSign &&
-      (resolved.internal || (tokPkg && realmAddr && approved)),
-  );
+  const { approveReady, createReady } = createPoolGates({
+    resolved,
+    gnotUgnot: u,
+    tokenBase,
+    canSign,
+    tokPkg,
+    realmAddr,
+    approved,
+  });
+  const listed = Boolean(resolved && live.pools?.some((p) => p.symbol === resolved.symbol));
 
   async function lookup() {
     const ref = tokenKey.trim();
@@ -161,17 +165,20 @@ export default function CreatePool() {
         </p>
         {!canSign ? <p className="hint">{d.connectToSign}</p> : null}
         {resolved && !resolved.internal && !approved ? <p className="hint">{d.approveThenCreate}</p> : null}
+        {resolved && !resolved.internal && approved ? <p className="hint">{d.approved}</p> : null}
         {resolved && !resolved.internal ? (
-          <button className="btn ghost wide" type="button" disabled={!!busy || !ready} onClick={() => void approve().catch(() => {})}>
+          <button className="btn ghost wide" type="button" disabled={!!busy || !approveReady} onClick={() => void approve().catch(() => {})}>
             {d.approveFirst}
           </button>
         ) : null}
-        <button className="btn primary wide" type="button" disabled={!!busy || !ready} onClick={() => void create().catch(() => {})}>
+        <button className="btn primary wide" type="button" disabled={!!busy || !createReady} onClick={() => void create().catch(() => {})}>
           {busy || d.createPool}
         </button>
-        <button className="btn ghost wide" type="button" onClick={() => setTab("liq")}>
-          {d.fundGauge} →
-        </button>
+        {listed ? (
+          <button className="btn ghost wide" type="button" onClick={() => addLp(`ugnot|${resolved!.symbol}`)}>
+            {d.fundGauge} →
+          </button>
+        ) : null}
       </div>
     </section>
   );
