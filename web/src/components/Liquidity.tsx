@@ -8,6 +8,7 @@ import { isIncentivized } from "../lib/hub";
 import type { ChainToken, Pool } from "../types";
 import GaugePanel from "./GaugePanel";
 import { PairAvatars, TokenChip } from "./TokenAvatar";
+import TokenPicker from "./TokenPicker";
 
 function poolStatus(p: Pool, height: number, d: { lpLocked: string; noLpSeed: string; canAdd: string }) {
   if (Number(p.totalLP) <= 0) return { ok: false, label: d.noLpSeed };
@@ -28,6 +29,7 @@ export default function Liquidity() {
   const [feeBps, setFeeBps] = useState("30");
   const [burn, setBurn] = useState("0");
   const [approved, setApproved] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const height = Number(live.realmHeight || live.height || 0);
   const u = toUgnot(gnot);
@@ -193,26 +195,11 @@ export default function Liquidity() {
                   readOnly={!isNew && need > 0n}
                   onChange={(e) => setTokenAmt(e.target.value)}
                 />
-                {resolved ? <TokenChip symbol={resolved.symbol} /> : null}
+                <button className="token-pill" type="button" onClick={() => setPickerOpen(true)}>
+                  {resolved ? <TokenChip symbol={resolved.symbol} /> : d.selectToken}
+                  <span className="caret">▾</span>
+                </button>
               </div>
-              <label>{d.selectToken}</label>
-              <select
-                value={pick}
-                onChange={(e) => {
-                  setPick(e.target.value);
-                  if (e.target.value !== "__custom") setLookupErr("");
-                }}
-              >
-                <option value="">{d.selectToken}</option>
-                {options.map((t) => (
-                  <option key={t.symbol} value={t.symbol}>
-                    {t.symbol}
-                    {t.name && t.name !== t.symbol ? ` — ${t.name}` : ""}
-                    {t.pooled ? " · pool" : ""}
-                  </option>
-                ))}
-                <option value="__custom">{d.customToken}</option>
-              </select>
               {pick === "__custom" || !options.length ? (
                 <div className="lookup-row">
                   <input
@@ -231,6 +218,29 @@ export default function Liquidity() {
                   </button>
                 </div>
               ) : null}
+              <TokenPicker
+                open={pickerOpen}
+                includeGnot={false}
+                allowUnpooled
+                onClose={() => setPickerOpen(false)}
+                onSelect={(t) => {
+                  setApproved(false);
+                  if (t.pooled) {
+                    setPick(t.symbol);
+                    setPoolId(t.poolId || `ugnot|${t.symbol}`);
+                    return;
+                  }
+                  setPick(t.symbol);
+                  setResolved({
+                    symbol: t.symbol,
+                    name: t.name || t.symbol,
+                    key: t.key || t.symbol,
+                    decimals: 0,
+                    pooled: false,
+                    internal: Boolean(t.internal),
+                  });
+                }}
+              />
               {lookupErr ? <p className="hint impact-hi">{lookupErr}</p> : null}
               {resolved ? (
                 <p className="hint">

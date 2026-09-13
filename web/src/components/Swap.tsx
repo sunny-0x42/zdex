@@ -5,6 +5,7 @@ import { mulDiv, quoteInLocal, quoteLocal } from "../lib/amm";
 import { api } from "../lib/api";
 import { UGNOT, fmtGnot, fmtInt, parseUgnot, toUgnot } from "../lib/format";
 import TokenAvatar from "./TokenAvatar";
+import TokenPicker from "./TokenPicker";
 
 type Preflight = {
   ok: boolean;
@@ -313,31 +314,24 @@ export default function Swap() {
         {bits.length ? <p className="hint">{bits.join(" · ")}</p> : null}
       </div>
 
-      {pick ? (
-        <div className="modal" onClick={() => setPick(null)}>
-          <div className="card modal-card" onClick={(e) => e.stopPropagation()}>
-            <h2>{d.selectToken}</h2>
-            <div className="token-list">
-              <button type="button" onClick={() => chooseToken("GNOT", pool?.id)}>
-                <TokenAvatar symbol="GNOT" size={32} />
-                <span>
-                  <b>GNOT</b>
-                  <div className="muted">Native</div>
-                </span>
-              </button>
-              {pools.map((p) => (
-                <button key={p.id} type="button" onClick={() => chooseToken(p.symbol, p.id)}>
-                  <TokenAvatar symbol={p.symbol} size={32} />
-                  <span>
-                    <b>{p.symbol}</b>
-                    <div className="muted">{p.name}</div>
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <TokenPicker
+        open={Boolean(pick)}
+        includeGnot
+        allowUnpooled
+        onClose={() => setPick(null)}
+        onSelect={(t) => {
+          if (t.symbol === "GNOT") {
+            chooseToken("GNOT", t.poolId || pool?.id);
+            return;
+          }
+          if (!t.pooled) {
+            setPick(null);
+            setTab("create");
+            return;
+          }
+          chooseToken(t.symbol, t.poolId);
+        }}
+      />
 
       {confirm ? (
         <div className="modal" onClick={() => setConfirm(null)}>

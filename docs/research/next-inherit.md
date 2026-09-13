@@ -365,3 +365,333 @@ Gate: `cd web; npm test` (kể `hub.test.ts` deny v2 Fund). Không
 | Pearl v3 stack | `deploy/pearl/incentives-v3/incentives.gno` `pot = Remaining + sent` |
 | UI route | `web/src/lib/hub.ts` `pkgForFunc`; `web/config.js` `NETWORKS.pearl` |
 | Live qeval | Pearl 2026-09-13 `HubSnapshot`, `PoolInfo`, `GaugeSnapshot` |
+
+---
+
+## Wave 2 — after picker and dual gauge
+
+Status: research / design. Append 2026-09-13. Không overwrite §0–§10.
+Không deploy. Không addpkg. Không sửa realm live. Không CL trên
+`ugnot|ZDEX`. Không APY. Không lời khuyên đầu tư.
+
+Parent **đang** ship TokenPicker + dual-gauge inherit UI (item 1–2 của
+§6 / `next-ui.md` #2–#3). Wave 2 **bắt đầu sau** hai surface đó land
+trên `web/`. Không làm lại picker. Không làm lại `lumpGauge` /
+`programGauge`. Luật inherit §2 vẫn đứng: path = identity; sidecar
+không `import` vào `SwapExactIn`; `SetNextPkg` chỉ successor hub;
+không LP auto-migrate; không Uniswap hooks 1:1.
+
+Pearl vẫn một pool `ugnot|ZDEX` trên v2. `incentives/v1` 100 GNOT lump.
+`incentives/v3` empty, FundProgram đúng stack Remaining. `incentives/v2`
+**chết**.
+
+---
+
+### Kết luận ngắn
+
+Sau picker + dual-gauge, gap tiền thật tiếp theo **không** phải hub v3.
+
+**Next ship:** **W2.1 (B) wire `SwapExactOut`**. ABI đã live. Checkbox
+đang gọi `SwapExactIn` với `minOut = 0`. Không addpkg. Không
+`SetNextPkg`. Pool ZDEX đứng.
+
+Sau đó: book density (B) rồi một cửa CreatePool (B) để listing thứ hai
+không fail Approve / Fund nhầm pool. Oracle = sidecar **Ping** (A),
+không AfterSwap. SweepDust = farm **v4** muộn (A). Thin hub (C) chỉ
+khi cần slot mới. **Không** concentrated liquidity trên pool đang sống.
+
+---
+
+### Bảng ranked — 8 inherit items
+
+Class: **(A)** sidecar-only path mới. **(B)** `web/` only. **(C)** DEX
+hub v3 (`validModule` / `Caps` / `HookPkg`).
+
+| # | Class | Item | Inherit live | Gno | Human yes |
+|---|---|---|---|---|---|
+| **W2.1** | **B** | **Wire `SwapExactOut`** | Cùng v2 `swap.gno`. `QuoteIn` đã có. Pool ZDEX | ABI live | Không (UI) |
+| **W2.2** | B | Book density | Escrow `PlaceBid`/`PlaceAsk`/`FillOrder` **trong** v2. Không `SetModule("book")` | ABI live | Không |
+| **W2.3** | B | Thêm listing `CreatePool` (một cửa + wait pool + spender `RealmAddr`) | `CreatePool` v2 permissionless. 1 pool hôm nay | — | Không |
+| **W2.4** | B | `PlaceAsk` / sell-token Approve trên **token package** | Cùng spender `RealmAddr` như CreatePool. ZDEX internal skip | — | Không |
+| **W2.5** | A | Oracle sidecar **Ping** (TWAP ring, `PoolInfo` query) | Không nhúng v2. Không feed `AmountOut` | Query không `cur`; không `func()` | addpkg sidecar **sau** types local |
+| **W2.6** | A | Farm **v4** `SweepDust` (admin + paused) | v1 lump / v3 Remaining **không** đụng. Path mới | Banker sidecar; cấm sweep `Owed` | Yes: addpkg v4, không Fund v2 |
+| **W2.7** | C | Thin hub v3 — **chỉ** khi cần slot `incentives`/`hooks` hoặc AfterSwap trong `swap.gno` mới | `SetNextPkg(v3)`. LP ZDEX **ở lại** v2 | Import tĩnh. `ModuleOf("swap")=v2` **không** chạy hook | Yes: addpkg v3 + `SetNextPkg` |
+| **W2.8** | C / **không** | Concentrated liquidity trên live ZDEX | Phá inherit full-range + Acc v1 | Math tick làm được trên realm **mới**; **cấm** gắn lên v2 | Không hỏi |
+
+Không xếp lại: TokenPicker, dual-gauge, `FundProgram` vào v2, ve-token,
+flash, Uniswap v4 hooks 1:1, `incentives/v4` **trước** khi v3 có program.
+
+---
+
+### Chi tiết từng item
+
+#### W2.1 — Wire `SwapExactOut` (B) — next ship
+
+Realm **đã** có (`gno.land/r/zdex/v2/swap.gno`, Pearl packet
+`deploy/pearl/r-v2/swap.gno`):
+
+```text
+SwapExactOut(cur, poolID, tokenOut, amountOut, maxIn, maxHeight) int64
+QuoteIn(poolID, tokenOut, amountOut) int64
+```
+
+Buy (`tokenOut` = symbol): `IsUserCall`, `AmountIn`, `in <= maxIn`,
+`OriginSend >= in`, refund `sent-in`. Sell: `pullUserToken(in)`,
+`sendUgnot(amountOut)`. Fee trên `in` thật — `economics.md` §1.4.
+Test `TestSwapExactOut` local.
+
+UI hôm nay (`web/src/components/Swap.tsx`):
+
+| Lỗ | Hành vi |
+|---|---|
+| `doSwap` | luôn `SwapExactIn` + `quote.inn` + `quote.min` |
+| Exact-out branch | `quote.min = 0n` — **không** max-in on-chain |
+| `/api/quote` | `quoteExactIn` thôi (`chain.mjs`) — không `QuoteIn` |
+| `/api/preflight` | `tokenIn` + `amountIn` + `minOut` — không `maxIn` |
+| Caps | `quote` → `caps.exactOut` hiện checkbox (`hub.ts`) |
+
+Wire:
+
+1. Checkbox on → `call("SwapExactOut", [pool.id, tokenOut, amountOut, maxIn, deadline], send)`.
+2. `maxIn = QuoteIn + slip` (local `quoteInLocal` + qeval `QuoteIn` khi có).
+3. Buy: `send = maxIn ugnot` (realm refund thừa). Không gửi đúng `inn`
+   rồi hy vọng — `require(sent >= in)`.
+4. Sell: `send` rỗng; `pullUserToken` `in`; Approve token-pkg nếu
+   external (W2.4).
+5. Preflight: insufficient GNOT vs `maxIn`; snipe cap trên `amountOut`.
+6. Ẩn checkbox nếu `!caps.exactOut` — đừng để UX giả.
+
+Không đổi chữ ký. Không `minOut=0` trên exact-in. Rollback = revert
+`web/`. `cd web; npm test`.
+
+#### W2.2 — Book density (B)
+
+Escrow **đã** trong v2 (`book.gno`). `orders` AVL cùng package với
+AMM. `SetModule("book", other)` **tách sổ** — UI gọi path trống, lệnh
+cũ kẹt v2. **Không làm.**
+
+`Orders.tsx` hôm nay: give/want integer, một `fillAmt` default
+`1000000`, `live.orders` **global**, hint `want/give` bất kể side,
+empty copy nói “this pool” nhưng bảng mọi pool.
+
+Density — visual, cùng msg:
+
+- Filter `o.pool === pool.id`.
+- Cột Bids (lock GNOT) / Asks (lock token). Sort bid cao→thấp, ask
+  thấp→cao.
+- Human: bid give = `fmtGnot`; ask give = token units. Limit = GNOT
+  per token.
+- Fill **trên hàng**. Ask fill `OriginSend` ugnot. Highlight
+  `maker === walletAddr`.
+- Mid: best bid/ask vs AMM `quote1gnot`. Depth bar optional.
+- `FillOrder` **0** AMM fee, 0 points, 0 volume Fee APR
+  (`economics.md` §1.4). UI không gắn spark / fee-share cho fill.
+
+ZDEX internal: `PlaceAsk` không Approve. Listing GRC20 mới: W2.4
+trước, không silent revert. English: Bids, Asks, Price, Size, Mid,
+AMM, Yours, Fill this order. Không “book yield”.
+
+#### W2.3 — Thêm listing `CreatePool` (B)
+
+Pearl: **một** pool. Listing thêm = user `CreatePool` trên **cùng**
+v2, id `ugnot|<SYMBOL>`, seed ≥ 1 GNOT, fee 5/30/100, `CreatorBps=0`,
+`ProtocolBps=1667`. Không `Launch`. Không zdex mint ticker. Không
+pool thứ hai trên hub mới.
+
+Picker (Wave 1) import token chưa pooled → CTA Create / Add LP, **không**
+bịa hop. Wave 2 đóng cửa fail còn lại (`ui-create-fund-gaps.md`,
+`next-ui.md` #1):
+
+| Lỗ | Fix UI |
+|---|---|
+| Hai form Create + Liquidity | Một cửa: `?tab=create` → Liquidity new-pair. `CreatePool.tsx` không còn mental model thứ hai |
+| Create xong SSE trễ → Fund / GaugePanel pool cũ | Wait `ugnot\|SYMBOL` ∈ `live.pools` rồi `addLp`. Không Fund trước khi pool hiện |
+| Liquidity spender `realmAddr \|\| viewAddr` | **Chỉ** `RealmAddr()`. `viewAddr` = deployer EOA — allowance kẹt |
+| `decimals === 0` silent | Block Create hoặc hiện decimals từ lookup |
+| Pooled paste → `poolExists` chết | CTA Add LP |
+| Extra Fund trước khi pool có | Ẩn cho đến `live.pools` |
+
+`TransferFrom` sau CreatePool đi realm, không deployer. Catalog
+`/api/tokens` + `/api/token?ref=` đã có — không ABI mới.
+
+Nhiều pool ≠ TVL promise. Mỗi listing tự seed. Gauge v3 empty cho
+pool mới cho đến `FundProgram` **v3**. Không auto-Fund 100 GNOT v1
+sang id mới.
+
+#### W2.4 — PlaceAsk / sell Approve (B)
+
+Cùng rule CreatePool: MsgCall `Approve(spender, amount)` trên **token
+package**, spender = zdex `RealmAddr`, không `grc20reg.Approve`, không
+v2 `Approve` (internal ledger). Swap sell-token và `PlaceAsk` external
+cùng spender.
+
+ZDEX demo internal → skip. W2.2 density trên ZDEX chạy không đợi
+W2.4. Listing GRC20 thứ hai **cần** W2.4 kẻo ask/sell revert.
+
+#### W2.5 — Oracle sidecar Ping (A)
+
+Không copy Uniswap v4. Không `func()`. Không persist `Observer`.
+Không `hookData`. Không return-delta.
+
+Hai shape (`hooks-gno.md`, `upgrade-modules.md` §6.1):
+
+| Shape | Class | Việc |
+|---|---|---|
+| **Ping** opt-in | **(A)** | Sidecar `/r/<g1>/zdex/oracle` (hoặc `/hooks/twap` **không** gắn DEX). User/keeper `Ping(poolID)` đọc `PoolInfo` (không `cur`, giống farm). Ring N=32. `Observe` qeval | 
+| AfterSwap auto | **(C)** | `HookPkg` trong `SwapExactIn` generation **mới**. v2 bytecode **không** gọi hook. Thin hub trỏ `ModuleOf("swap")=v2` **không** đủ |
+
+Wave 2 làm **Ping**, không AfterSwap.
+
+Spec Ping (local `/p/zdex/hooks/v1` types + math trước addpkg):
+
+- `priceX6 = MulDiv(ReserveT, 1e6, ReserveU+VirtualU)` — cùng
+  `SpotPrice`.
+- Cùng height: overwrite last. Ring đầy: drop oldest, **không** panic.
+- Overflow cumul: skip, Emit, vẫn lưu spot.
+- `Observe(poolID, agoBlocks)` off-path. Window thiếu → panic query,
+  không swap.
+- **Cấm** feed `AmountOut` / `AmountIn` v1. Book limit đọc `Observe`
+  sau, không trong `FillOrder` v2.
+- Không Pyth. Spot nội bộ, manip window ngắn được. Copy no-advice.
+
+v2 không `import` oracle. Sidecar không `cross(cur)` mutator DEX.
+Router allowlist + AfterSwap = W2.7, không Wave 2 coding.
+
+#### W2.6 — Farm v4 `SweepDust` (A)
+
+**Không** tuần này. `incentives/v3` empty và **đúng** Remaining stack.
+§6 đã cấm xếp v4 sớm. Mở khi **cả hai**: (1) v3 có program
+`Remaining > 0` trên pool thật, (2) trước mainnet — Medium
+`incentives-security.md`.
+
+Dust nằm banker sidecar, không gán EOA:
+
+- Share `minLiquidity / TotalLP` (burn 1000 Uniswap-v2 style).
+- LP chưa `Sync` (`LastLP=0`) lúc `Fund` — 100% kẹt nếu không ai
+  checkpoint.
+- `MulDiv` floor (`delta=0` → `accrue` không trừ Remaining đúng lúc).
+- Forfeit `RemoveLiquidity` trước Claim.
+
+`SweepDust` **được** (path mới):
+
+- `mustOwner` + `paused==true`.
+- Chỉ banker **trên** `funded - claimed - owed`. `Owed` /
+  `Claimable` **cấm** quét — đó là user chưa Claim
+  (`incentives.md` §5.3: không `Recover` / `Collect` Funded−Claimed).
+- Không `cross(cur)` v2. Không đụng Acc v1 100 GNOT bằng cách
+  re-addpkg v1.
+- Two-step admin copy v2 trên **cùng** generation v4 (v1/v3 admin
+  một bước — không vá path đã live).
+
+Cấm:
+
+- Gọi v4 là “incentives/v2” (Pearl v2 overwrite Remaining).
+- `FundProgram` vào v1 hay Pearl v2.
+- Sweep khi unpaused.
+- Implied APY từ dust đã quét.
+
+UI: ẩn Sweep khỏi Guide. Admin tool sau human yes. Claim/Sync v1+v3
+vẫn hai hàng (Wave 1).
+
+#### W2.7 — Thin hub v3 (C)
+
+“Thin hub” = path mới chỉ nới `validModule` / `Caps` (`incentives`,
+`hooks`) rồi `SetModule("swap", v2)`.
+
+**Không chạy AfterSwap.** `SwapExactIn` là hàm trong package nhận
+MsgCall. `Modules` là bảng UI (`upgrade.gno`). v2 `swap.gno` không
+đọc `HookPkg` — field đó **không tồn tại** trên `Pool` live.
+
+Thin hub **đủ** khi product chỉ cần:
+
+- UI bỏ `incentivesPkg` cứng: `ModuleOf("incentives")` trên v3.
+- Pointer `hooks` cho UI, dispatch **chưa** nằm swap.
+
+Thin hub **không đủ** khi cần AfterSwap / `CreatePoolHooked` /
+`maybeRollEpoch` fix / `FillOrder` `splitFee` / volume on-chain
+(§7). Lúc đó copy `swap.gno` (+ in-flight lock) vào v3 = **pool mới**.
+`ugnot|ZDEX` (300 GNOT, `totalLP`, Acc v1) **ở lại** v2. User muốn
+hooked AMM = `CreatePool` trên v3, không migrate.
+
+`SetNextPkg` chỉ sau addpkg v3. Không trỏ sidecar farm. Local
+`gno.land/r/zdex/v3` ≠ Pearl `gno.land/r/<g1>/zdex/v3`.
+
+Wave 2 **không** mở W2.7. TokenPicker / ExactOut / book / listing
+không cần generation DEX mới (§7).
+
+#### W2.8 — Không CL trên live ZDEX (C / không)
+
+Concentrated liquidity (ticks, NFT position, range) **không inherit**
+pool full-range.
+
+Live `PoolInfo` `ugnot|ZDEX`: `virtualU=0`, `feeBps=30`,
+`reserveU=300e6`, CPMM `AmountOut` / `geoMean` LP. Position = shares
+`TotalLP`, không range. Gauge v1 Acc indexed `TotalLP`. Tick trên
+cùng id phá k, phá Acc, phá `Quote` UI.
+
+Gno **không** cấm math tick trên realm **mới**. Product **cấm**:
+
+- Gắn ticks / `HookPkg` / fee-tier thứ hai lên pool đang sống.
+- Promise “Uniswap v3 on ZDEX”.
+- NFT position migrate từ `Position.LP`.
+- Flash accounting / EIP-1153 — **impossible** (OriginSend một
+  envelope, banker push-only).
+
+CL = generation DEX **khác**, pool id mới, user LP lại. Không Wave 2.
+Không tuần này. Không hỏi.
+
+---
+
+### Thứ tự ship (sau picker + dual-gauge)
+
+```text
+W2.1 SwapExactOut wire     web/     ngay
+W2.2 Book density          web/     cùng sprint nếu còn slot
+W2.4 PlaceAsk Approve      web/     trước listing GRC20 external
+W2.3 Một cửa CreatePool    web/     listing #2 không fail Fund
+W2.5 Oracle Ping types     /p/ local tests — addpkg sau yes
+W2.6 SweepDust v4          không — đợi v3 Remaining > 0
+W2.7 Thin hub              không — đợi slot / AfterSwap thật
+W2.8 CL on ZDEX            không bao giờ trên pool live
+```
+
+Owner W2.1–W2.4: `zdex-product`. Review copy: `zdex-trust`. Routing
+oracle/farm: `zdex-research`. Realm W2.5–W2.7: `zdex-protocol` **sau**
+human yes, không trong note này.
+
+Gate W2.1: `cd web; npm test` (SwapExactOut nhánh `maxIn`, không
+`SwapExactIn` khi checkbox on). Không `gno test` bắt buộc. Không
+broadcast.
+
+---
+
+### Việc Wave 2 không làm
+
+- Overwrite v2 DEX / AMM v1 / incentives v1/v2/v3.
+- `SetModule("incentives"|"hooks"|"book")` trên live v2.
+- `SetNextPkg` vào farm hoặc oracle sidecar.
+- AfterSwap trong bytecode v2.
+- Feed TWAP vào `AmountOut`.
+- `SweepDust` trên v1 (100 GNOT Acc) hoặc v3 empty.
+- Concentrated liquidity / ve-token / flash / `func()` trên ZDEX live.
+- Multi-hop (pair vẫn `ugnot|SYMBOL`; hop 2 cần pool khác-GNOT — chưa có).
+- Implement realm trong research này.
+- Mnemonic, raw `gnokey`, tweet, APY.
+
+---
+
+### Tham chiếu Wave 2
+
+| Mục | Chỗ |
+|---|---|
+| Exact-out fake checkbox | `web/src/components/Swap.tsx` `doSwap`; `product.md` §3 |
+| `SwapExactOut` / `QuoteIn` | `gno.land/r/zdex/v2/swap.gno` |
+| `/api/quote` exact-in only | `web/chain.mjs` `quoteExactIn` |
+| Book table | `web/src/components/Orders.tsx`; `next-ui.md` #4 |
+| FillOrder 0 fee | `book.gno`; `economics.md` §1.4 |
+| Create leftover | `docs/research/ui-create-fund-gaps.md` |
+| Spender ≠ deployer | `CreatePool.tsx` vs Liquidity `viewAddr` fallback |
+| Ping vs AfterSwap | `upgrade-modules.md` §6.1; `hooks-gno.md` §9 |
+| SweepDust Medium | `incentives-security.md`; `incentives.md` §5.3 |
+| Thin hub không = hook | `upgrade.gno` `Modules`; `next-inherit.md` §6 #6 |
+| CL cấm inherit | `next-inherit.md` §5; `ROADMAP.md` |

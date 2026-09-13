@@ -136,8 +136,23 @@ export function parseGaugeSnapshot(raw: string | undefined): Gauge | null {
   };
 }
 
+export function gaugesFor(live: Live | undefined, poolId: string): Gauge[] {
+  return (live?.gauges || []).filter((g) => g.id === poolId);
+}
+
 export function gaugeFor(live: Live | undefined, poolId: string): Gauge | undefined {
-  return live?.gauges?.find((g) => g.id === poolId);
+  return gaugesFor(live, poolId)[0];
+}
+
+export function isLumpGauge(g: Gauge): boolean {
+  if (/incentives\/v1(?:$|\/)/.test(g.pkg || "")) return true;
+  if (/incentives\/v[23]/.test(g.pkg || "")) return false;
+  return (!g.rewardPerBlock || g.rewardPerBlock === "0") && (!g.remaining || g.remaining === "0");
+}
+
+export function isTimedGauge(g: Gauge): boolean {
+  if (/incentives\/v1(?:$|\/)/.test(g.pkg || "")) return false;
+  return Boolean((g.rewardPerBlock && g.rewardPerBlock !== "0") || (g.remaining && g.remaining !== "0") || /incentives\/v[23]/.test(g.pkg || ""));
 }
 
 export function isIncentivized(live: Live | undefined, poolId: string): boolean {

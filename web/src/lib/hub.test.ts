@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   ALL_TABS,
+  gaugesFor,
   incentivesEnabled,
   isIncentivized,
+  isLumpGauge,
+  isTimedGauge,
   NAV_TABS,
   parseCapsList,
   parseGaugeList,
@@ -129,8 +132,34 @@ describe("hub", () => {
     expect(timed?.rewardPerBlock).toBe("3");
     expect(timed?.remaining).toBe("90000000");
     expect(parseGaugeSnapshot("ugnot|ZTT;0;0;0;1")?.on).toBe(false);
-    const live = { pools: [], orders: [], ok: true, gauges: [g!] };
-    expect(isIncentivized(live, "ugnot|ZTT")).toBe(true);
-    expect(isIncentivized(live, "ugnot|DEMO")).toBe(false);
+    const one = { pools: [], orders: [], ok: true, gauges: [g!] };
+    expect(isIncentivized(one, "ugnot|ZTT")).toBe(true);
+    expect(isIncentivized(one, "ugnot|DEMO")).toBe(false);
+  });
+
+  it("splits lump vs timed gauges per pool", () => {
+    const live = {
+      ok: true,
+      pools: [],
+      orders: [],
+      gauges: [
+        { id: "ugnot|ZDEX", acc: "1", totalFunded: "100000000", on: true, paused: false, pkg: "gno.land/r/x/incentives/v1" },
+        {
+          id: "ugnot|ZDEX",
+          acc: "0",
+          totalFunded: "0",
+          on: true,
+          paused: false,
+          remaining: "0",
+          rewardPerBlock: "0",
+          pkg: "gno.land/r/x/incentives/v3",
+        },
+      ],
+    };
+    expect(gaugesFor(live, "ugnot|ZDEX")).toHaveLength(2);
+    expect(isLumpGauge(live.gauges[0])).toBe(true);
+    expect(isTimedGauge(live.gauges[0])).toBe(false);
+    expect(isTimedGauge(live.gauges[1])).toBe(true);
+    expect(isLumpGauge(live.gauges[1])).toBe(false);
   });
 });
