@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useDex } from "../context";
 import { api } from "../lib/api";
 import { fmtGnot, fmtInt, parseUgnot } from "../lib/format";
+import { isListedToken, uniqueBySymbol } from "../lib/listedTokens";
 import type { ChainToken } from "../types";
 import TokenAvatar from "./TokenAvatar";
 
@@ -51,52 +52,32 @@ export default function TokenPicker({
   }, [open, netId, walletAddr]);
 
   const needle = q.trim().toLowerCase();
-  const pooled = useMemo(() => {
-    const rows: TokenPick[] = pools.map((p) => ({
-      symbol: p.symbol,
-      name: p.name,
-      key: p.key,
-      poolId: p.id,
-      pooled: true,
-    }));
-    return rows.filter((t) => matchTok(t, needle));
-  }, [pools, needle]);
-
-  const yours = useMemo(() => {
-    const out: TokenPick[] = [];
+  const listed = useMemo(() => {
+    const rows: TokenPick[] = [];
     if (includeGnot) {
-      out.push({ symbol: "GNOT", name: "Native", pooled: Boolean(pools.length), poolId: pools[0]?.id });
+      rows.push({ symbol: "GNOT", name: "Native", pooled: Boolean(pools.length), poolId: pools[0]?.id });
     }
-    for (const t of catalog) {
-      if (!t.symbol || t.symbol === "GNOT") continue;
-      const bal = t.balance && t.balance !== "0";
-      if (!bal && !wallet.balances?.[t.symbol]) continue;
-      out.push({
+    for (const p of pools) {
+      rows.push({ symbol: p.symbol, name: p.name, key: p.key, poolId: p.id, pooled: true });
+    }
+    return uniqueBySymbol(rows).filter((t) => isListedToken(t.symbol, t.pooled) && matchTok(t, needle));
+  }, [pools, includeGnot, needle]);
+
+  const extras = useMemo(() => {
+    if (!allowUnpooled) return [];
+    const seen = new Set(listed.map((t) => t.symbol.toUpperCase()));
+    return catalog
+      .filter((t) => t.symbol && !seen.has(t.symbol.toUpperCase()) && isListedToken(t.symbol, t.pooled))
+      .map((t) => ({
         symbol: t.symbol,
         name: t.name,
         key: t.key,
         poolId: t.poolId,
         pooled: Boolean(t.pooled),
         internal: t.internal,
-      });
-    }
-    return out.filter((t) => matchTok(t, needle));
-  }, [catalog, includeGnot, pools, wallet.balances, needle]);
-
-  const rest = useMemo(() => {
-    if (!allowUnpooled) return [];
-    const seen = new Set(pooled.map((t) => t.symbol.toUpperCase()));
-    return catalog
-      .filter((t) => t.symbol && !seen.has(t.symbol.toUpperCase()) && !t.pooled)
-      .map((t) => ({
-        symbol: t.symbol,
-        name: t.name,
-        key: t.key,
-        pooled: false,
-        internal: t.internal,
       }))
       .filter((t) => matchTok(t, needle));
-  }, [allowUnpooled, catalog, pooled, needle]);
+  }, [allowUnpooled, catalog, listed, needle]);
 
   async function doImport() {
     const ref = importRef.trim();
@@ -136,18 +117,13 @@ export default function TokenPicker({
           placeholder={d.searchTokens}
         />
         <div className="token-list">
-          {yours.length ? <p className="hint">{d.yourTokens}</p> : null}
-          {yours.map((t) => (
-            <TokRow key={"y-" + t.symbol} t={t} wallet={wallet} onClick={() => { onSelect(t); onClose(); }} />
+          {listed.map((t) => (
+            <TokRow key={t.symbol} t={t} wallet={wallet} onClick={() => { onSelect(t); onClose(); }} />
           ))}
-          {pooled.length ? <p className="hint">{d.pooled}</p> : null}
-          {pooled.map((t) => (
-            <TokRow key={"p-" + t.symbol} t={t} wallet={wallet} onClick={() => { onSelect(t); onClose(); }} />
-          ))}
-          {rest.length ? <p className="hint">{d.importToken}</p> : null}
-          {rest.map((t) => (
+          {extras.length ? <p className="hint">{d.importToken}</p> : null}
+          {extras.map((t) => (
             <TokRow
-              key={"r-" + t.symbol}
+              key={"x-" + t.symbol}
               t={t}
               wallet={wallet}
               onClick={() => {

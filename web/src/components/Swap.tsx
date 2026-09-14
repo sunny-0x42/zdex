@@ -405,7 +405,7 @@ export default function Swap() {
       <TokenPicker
         open={Boolean(pick)}
         includeGnot
-        allowUnpooled
+        allowUnpooled={false}
         onClose={() => setPick(null)}
         onSelect={(t) => {
           if (t.symbol === "GNOT") {
