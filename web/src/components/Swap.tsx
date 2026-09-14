@@ -3,7 +3,7 @@ import { useDex } from "../context";
 import { errText } from "../i18n";
 import { exactOutPlan, mulDiv, quoteLocal } from "../lib/amm";
 import { api } from "../lib/api";
-import { UGNOT, fmtGnot, fmtInt, parseUgnot, tokenPkgFromKey, toUgnot } from "../lib/format";
+import { UGNOT, fmtGnot, fmtToken, parseUgnot, tokenPkgFromKey, toTokenBase, toUgnot } from "../lib/format";
 import { fmtUsd, gnotUsdFromPools, tokenUsd, ugnotToUsd } from "../lib/usd";
 import type { ChainToken } from "../types";
 import TokenAvatar from "./TokenAvatar";
@@ -65,11 +65,12 @@ export default function Swap() {
     if (!pool) return null;
     const slip = BigInt(slippage || 100);
     const feeTxt = `${pool.feeBps / 100}%`;
-    const spot = `1 GNOT = ${fmtInt(pool.quote1gnot)} ${pool.symbol}`;
+    const dec = pool.decimals || 6;
+    const spot = `1 GNOT = ${fmtToken(pool.quote1gnot, dec)} ${pool.symbol}`;
     const bal = tokenIn === "ugnot" ? parseUgnot(wallet.coins) : BigInt(wallet.balances?.[pool.symbol] || 0);
     if (exactOut && exactOk) {
       const raw = String(amountOut || "0").replace(/,/g, "");
-      const want = tokenIn === "ugnot" ? BigInt(Math.max(0, Number(raw) || 0)) : toUgnot(raw);
+      const want = tokenIn === "ugnot" ? toTokenBase(raw, dec) : toUgnot(raw);
       const plan = exactOutPlan(pool, tokenIn, want, slip);
       if (!plan) {
         return { inn: 0n, out: 0n, maxIn: 0n, slipHint: "—", impact: "—", impactCls: "", feeTxt, spot, bal, inDisplay: "", outDisplay: amountOut, min: 0n, source: "local" as const, tokenOut: tokenIn === "ugnot" ? pool.symbol : "ugnot" };
@@ -81,19 +82,19 @@ export default function Swap() {
         out: plan.out,
         maxIn,
         tokenOut: plan.tokenOut,
-        slipHint: tokenIn === "ugnot" ? fmtGnot(maxIn) + " GNOT" : fmtInt(maxIn),
+        slipHint: tokenIn === "ugnot" ? fmtGnot(maxIn) + " GNOT" : fmtToken(maxIn, dec),
         impact: d.exactOut,
         impactCls: "",
         feeTxt,
         spot,
         bal,
-        inDisplay: tokenIn === "ugnot" ? fmtGnot(inn).replace(/,/g, "") : inn.toString(),
+        inDisplay: tokenIn === "ugnot" ? fmtGnot(inn).replace(/,/g, "") : fmtToken(inn, dec).replace(/,/g, ""),
         outDisplay: amountOut,
         min: 0n,
         source: chainOut != null ? ("chain" as const) : ("local" as const),
       };
     }
-    const inn = tokenIn === "ugnot" ? toUgnot(amountIn) : BigInt(Math.max(0, Number(amountIn) || 0));
+    const inn = tokenIn === "ugnot" ? toUgnot(amountIn) : toTokenBase(amountIn, dec);
     if (inn <= 0n) {
       return { inn: 0n, out: 0n, slipHint: "—", impact: "—", impactCls: "", feeTxt, spot, bal, inDisplay: amountIn, outDisplay: "", min: 0n, source: "local" as const };
     }
@@ -108,14 +109,14 @@ export default function Swap() {
       inn,
       out: used,
       localOut,
-      slipHint: tokenIn === "ugnot" ? fmtInt(min) : fmtGnot(min),
+      slipHint: tokenIn === "ugnot" ? fmtToken(min, dec) : fmtGnot(min),
       impact: `${impact.toFixed(2)}%`,
       impactCls: impact > 5 ? "impact-hi" : impact > 1 ? "impact-mid" : "impact-lo",
       feeTxt,
       spot,
       bal,
       inDisplay: amountIn,
-      outDisplay: tokenIn === "ugnot" ? fmtInt(used) : fmtGnot(used),
+      outDisplay: tokenIn === "ugnot" ? fmtToken(used, dec) : fmtGnot(used),
       min,
       source: chainOut != null ? ("chain" as const) : ("local" as const),
     };
@@ -128,7 +129,7 @@ export default function Swap() {
     }
     if (exactOut && exactOk) {
       const raw = String(amountOut || "0").replace(/,/g, "");
-      const want = tokenIn === "ugnot" ? BigInt(Math.max(0, Number(raw) || 0)) : toUgnot(raw);
+      const want = tokenIn === "ugnot" ? toTokenBase(raw, pool.decimals || 6) : toUgnot(raw);
       if (want <= 0n) {
         setChainOut(null);
         return;
@@ -319,7 +320,7 @@ export default function Swap() {
               </button>
             </div>
             <div className="swap-bal">
-              {d.balance} {tokenIn === "ugnot" ? fmtGnot(quote?.bal || 0n) : fmtInt(quote?.bal || 0n)} {inSym}
+              {d.balance} {tokenIn === "ugnot" ? fmtGnot(quote?.bal || 0n) : fmtToken(quote?.bal || 0n, pool?.decimals || 6)} {inSym}
               {tokenIn === "ugnot" ? ` · ${fmtUsd(ugnotToUsd(quote?.bal || 0n, gnotUsd))}` : pool ? ` · ${fmtUsd(tokenUsd(pool, gnotUsd) != null && quote ? Number(quote.bal) / 1e6 * (tokenUsd(pool, gnotUsd) as number) : null)}` : ""}
             </div>
           </div>
@@ -426,11 +427,11 @@ export default function Swap() {
           <div className="card modal-card" onClick={(e) => e.stopPropagation()}>
             <h2>{d.confirmSwap}</h2>
             <p className="hint">
-              {d.sell} {tokenIn === "ugnot" ? fmtGnot(BigInt(confirm.amountIn || quote?.inn || 0n)) : fmtInt(confirm.amountIn || quote?.inn || 0n)} {inSym}
+              {d.sell} {tokenIn === "ugnot" ? fmtGnot(BigInt(confirm.amountIn || quote?.inn || 0n)) : fmtToken(confirm.amountIn || quote?.inn || 0n, pool?.decimals || 6)} {inSym}
               {exactOut && exactOk ? ` (${d.maxIn} ${quote?.slipHint})` : ""}
             </p>
             <p className="hint">
-              {d.buy} {tokenIn === "ugnot" ? fmtInt(confirm.amountOut) : fmtGnot(confirm.amountOut)} {outSym}
+              {d.buy} {tokenIn === "ugnot" ? fmtToken(confirm.amountOut, pool?.decimals || 6) : fmtGnot(confirm.amountOut)} {outSym}
             </p>
             {(confirm.errors || []).map((c) => (
               <p key={c} className="hint impact-hi">

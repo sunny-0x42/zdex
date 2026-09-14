@@ -1,6 +1,6 @@
 import { useDex } from "../context";
 import { fmtApr, lpFeeAprPct } from "../lib/amm";
-import { fmtGnot, fmtInt } from "../lib/format";
+import { fmtGnot, fmtToken } from "../lib/format";
 import { fmtUsd, gnotUsdFromPools, poolTvlUsd, tokenUsd, ugnotToUsd } from "../lib/usd";
 import { PairAvatars } from "./TokenAvatar";
 
@@ -25,7 +25,7 @@ export default function Featured() {
           <b>
             {fmtUsd(tokenUsd(featured, gnotUsd))}
             <div className="muted">
-              {fmtInt(featured.quote1gnot)} {featured.symbol}
+              {fmtToken(featured.quote1gnot, featured.decimals || 6)} {featured.symbol}
             </div>
           </b>
         </div>

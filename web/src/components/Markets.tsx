@@ -1,7 +1,7 @@
 import { useDex } from "../context";
 import { fmtApr, gaugeBoostPct, lpFeeAprPct } from "../lib/amm";
 import { gaugeFor } from "../lib/hub";
-import { fmtGnot, fmtInt } from "../lib/format";
+import { fmtGnot, fmtToken } from "../lib/format";
 import { fmtUsd, gnotUsdFromPools, poolTvlUsd, tokenUsd, ugnotToUsd } from "../lib/usd";
 import { isIncentivized } from "../lib/hub";
 import Spark from "./Spark";
@@ -42,7 +42,7 @@ export default function Markets() {
             <div className="px">
               {fmtUsd(tokenUsd(p, gnotUsd))}
               <div className="muted">
-                1 {p.symbol} · {fmtInt(p.quote1gnot)} / GNOT
+                1 GNOT = {fmtToken(p.quote1gnot, p.decimals || 6)} {p.symbol}
               </div>
             </div>
             <div className="muted mkt-meta">
@@ -108,7 +108,7 @@ export default function Markets() {
                   </td>
                   <td className="r mono">
                     {fmtUsd(tokenUsd(p, gnotUsd))}
-                    <div className="muted">{fmtInt(p.quote1gnot)}</div>
+                    <div className="muted">1 GNOT = {fmtToken(p.quote1gnot, p.decimals || 6)}</div>
                   </td>
                   <td className="r">
                     {fmtUsd(poolTvlUsd(p, gnotUsd))}

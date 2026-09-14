@@ -1,5 +1,5 @@
 import { useDex } from "../context";
-import { fmtInt } from "../lib/format";
+import { fmtToken } from "../lib/format";
 
 export default function Ticker() {
   const { pools, d } = useDex();
@@ -19,7 +19,7 @@ export default function Ticker() {
     return (
       <span className="tick" key={p.id}>
         <span>{p.symbol}</span>
-        <b className={now >= prev ? "up" : "dn"}>{fmtInt(p.quote1gnot)}</b>
+        <b className={now >= prev ? "up" : "dn"}>{fmtToken(p.quote1gnot, p.decimals || 6)}</b>
         <img className="tick-ico" src="/tokens/gnot.svg" alt="" width={12} height={12} />
         <span>GNOT</span>
       </span>

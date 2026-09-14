@@ -9,16 +9,24 @@ export function fmtInt(n: string | number | bigint): string {
 }
 
 export function fmtGnot(ugnot: string | number | bigint): string {
+  return fmtToken(ugnot, 6);
+}
+
+/** GRC20/ugnot base units → human string. */
+export function fmtToken(base: string | number | bigint, decimals = 6): string {
   let n: bigint;
   try {
-    n = BigInt(ugnot);
+    n = BigInt(base);
   } catch {
     return "0";
   }
+  const d = Math.max(0, Math.min(18, Number(decimals) || 0));
   const neg = n < 0n;
   if (neg) n = -n;
-  const w = n / UGNOT;
-  const f = (n % UGNOT).toString().padStart(6, "0").replace(/0+$/, "");
+  if (d === 0) return `${neg ? "-" : ""}${n.toLocaleString("en-US")}`;
+  const den = 10n ** BigInt(d);
+  const w = n / den;
+  const f = (n % den).toString().padStart(d, "0").replace(/0+$/, "");
   return `${neg ? "-" : ""}${w.toLocaleString("en-US")}${f ? "." + f : ""}`;
 }
 
