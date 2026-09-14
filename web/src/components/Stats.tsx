@@ -4,6 +4,7 @@ import { feeTierLabel, gaugeFundedU, poolTvlU, poolVolumeU, splitOrders } from "
 import { fmtApr, lpFeeAprPct } from "../lib/amm";
 import { api } from "../lib/api";
 import { fmtGnot, shortAddr } from "../lib/format";
+import { fmtUsd, gnotUsdFromPools, poolTvlUsd, ugnotToUsd } from "../lib/usd";
 import { isIncentivized } from "../lib/hub";
 import Chart from "./Chart";
 import Spark from "./Spark";
@@ -63,18 +64,31 @@ export default function Stats() {
   const feeSeries = series.map((x) => (Number(x.feeU) || 0) / 1e6);
   const tvlSeries = series.map((x) => (Number(x.tvlU) || 0) / 1e6);
   const feeNow = st?.feeU || "0";
+  const gnotUsd = gnotUsdFromPools(pools);
+  const tvlUsd = ugnotToUsd(tvl, gnotUsd);
+  const tvlUsdFull = tvlUsd != null ? tvlUsd * 2 : null;
+  const volUsd = ugnotToUsd(vol, gnotUsd);
+  const feeUsd = ugnotToUsd(feeNow, gnotUsd);
+  const volSeriesUsd = gnotUsd != null ? volSeries.map((g) => g * gnotUsd) : volSeries;
+  const feeSeriesUsd = gnotUsd != null ? feeSeries.map((g) => g * gnotUsd) : feeSeries;
+  const tvlSeriesUsd = gnotUsd != null ? tvlSeries.map((g) => g * gnotUsd * 2) : tvlSeries;
 
   return (
     <section className="analytics">
       <p className="hint">{d.analyticsHint}</p>
+      <p className="hint">
+        {gnotUsd != null ? `GNOT ${fmtUsd(gnotUsd)}` : null} {d.usdPegHint}
+      </p>
       <div className="kpis">
         <div>
           <span>{d.tvl}</span>
-          <b>{fmtGnot(tvl)} GNOT</b>
+          <b>{fmtUsd(tvlUsdFull)}</b>
+          <div className="muted">{fmtGnot(tvl)} GNOT</div>
         </div>
         <div>
           <span>{d.volume24h}</span>
-          <b>{fmtGnot(vol)} GNOT</b>
+          <b>{fmtUsd(volUsd)}</b>
+          <div className="muted">{fmtGnot(vol)} GNOT</div>
         </div>
         <div>
           <span>{d.poolCount}</span>
@@ -100,21 +114,23 @@ export default function Stats() {
         </div>
         <div>
           <span>{d.epochPot}</span>
-          <b>{fmtGnot(st?.epoch?.pot || "0")} GNOT</b>
+          <b>{fmtUsd(ugnotToUsd(st?.epoch?.pot || "0", gnotUsd))}</b>
+          <div className="muted">{fmtGnot(st?.epoch?.pot || "0")} GNOT</div>
         </div>
         <div>
           <span>{d.gaugeFunded}</span>
-          <b>{fmtGnot(funded)} GNOT</b>
+          <b>{fmtUsd(ugnotToUsd(funded, gnotUsd))}</b>
+          <div className="muted">{fmtGnot(funded)} GNOT</div>
         </div>
       </div>
 
       <div className="chart-grid">
-        <Chart title={d.chartVolume} hint={d.volumeEstHint} values={volSeries} color="#4c82fb" />
-        <Chart title={d.chartFees} hint={d.chartFeesHint} values={feeSeries} color="#40b66b" />
-        <Chart title={d.chartTvl} values={tvlSeries} color="#7aa2ff" />
+        <Chart title={`${d.chartVolume} $`} hint={d.volumeEstHint} values={volSeriesUsd} color="#4c82fb" />
+        <Chart title={`${d.chartFees} $`} hint={d.chartFeesHint} values={feeSeriesUsd} color="#40b66b" />
+        <Chart title={`${d.chartTvl} $`} values={tvlSeriesUsd} color="#7aa2ff" />
       </div>
       <p className="hint">
-        {d.chartFees}: {fmtGnot(feeNow)} GNOT {d.est}
+        {d.chartFees}: {fmtUsd(feeUsd)} · {fmtGnot(feeNow)} GNOT {d.est}
       </p>
 
       <div className="card" style={{ marginTop: 14 }}>
@@ -151,8 +167,14 @@ export default function Stats() {
                         {isIncentivized(live, p.id) ? <span className="pill live">{d.incentivized}</span> : null}
                       </div>
                     </td>
-                    <td className="r">{fmtGnot(p.reserveU)} GNOT</td>
-                    <td className="r">{fmtGnot(p.volumeU || "0")}</td>
+                    <td className="r">
+                      {fmtUsd(poolTvlUsd(p, gnotUsd))}
+                      <div className="muted">{fmtGnot(p.reserveU)} GNOT</div>
+                    </td>
+                    <td className="r">
+                      {fmtUsd(ugnotToUsd(p.volumeU || "0", gnotUsd))}
+                      <div className="muted">{fmtGnot(p.volumeU || "0")}</div>
+                    </td>
                     <td className="r">{feeTierLabel(p.feeBps)}</td>
                     <td className="r">{fmtApr(lpFeeAprPct(p))}</td>
                     <td>

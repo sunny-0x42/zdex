@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { NETWORKS } from "../../config.js";
 import { useDex } from "../context";
 import { fmtGnot, parseUgnot, shortAddr } from "../lib/format";
+import { fmtUsd, gnotUsdFromPools, ugnotToUsd } from "../lib/usd";
 import { PRIMARY_TABS } from "../lib/hub";
 import type { Tab } from "../types";
 
@@ -32,6 +33,7 @@ export default function Header() {
   const connected = account && account.source === "adena";
   const primary = TABS.filter((name) => PRIMARY_TABS.includes(name));
   const extra: Tab[] = [...TABS.filter((name) => !PRIMARY_TABS.includes(name)), "create"];
+  const gnotUsd = gnotUsdFromPools(live.pools);
 
   return (
     <header className="top">
@@ -86,6 +88,11 @@ export default function Header() {
             ))}
           </select>
         </label>
+        {gnotUsd != null ? (
+          <span className="status-pill" title={d.usdPegHint}>
+            GNOT {fmtUsd(gnotUsd)}
+          </span>
+        ) : null}
         <div className="status-pill" title={age}>
           <span className={`dot ${dot}`} />
           <span className="mono">{live.realmHeight || live.height || "—"}</span>
@@ -96,12 +103,18 @@ export default function Header() {
             {connected ? (
               <>
                 <span className="wallet-addr">{shortAddr(account.address)}</span>
-                <span className="wallet-bal">{fmtGnot(parseUgnot(wallet.coins))} GNOT</span>
+                <span className="wallet-bal">
+                  {fmtUsd(ugnotToUsd(parseUgnot(wallet.coins), gnotUsd))}
+                  <span className="muted"> · {fmtGnot(parseUgnot(wallet.coins))} GNOT</span>
+                </span>
               </>
             ) : walletAddr ? (
               <>
                 <span className="wallet-addr">{shortAddr(walletAddr)}</span>
-                <span className="wallet-bal">{fmtGnot(parseUgnot(wallet.coins))} GNOT</span>
+                <span className="wallet-bal">
+                  {fmtUsd(ugnotToUsd(parseUgnot(wallet.coins), gnotUsd))}
+                  <span className="muted"> · {fmtGnot(parseUgnot(wallet.coins))} GNOT</span>
+                </span>
               </>
             ) : (
               d.connect

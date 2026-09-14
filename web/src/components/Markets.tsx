@@ -2,12 +2,14 @@ import { useDex } from "../context";
 import { fmtApr, gaugeBoostPct, lpFeeAprPct } from "../lib/amm";
 import { gaugeFor } from "../lib/hub";
 import { fmtGnot, fmtInt } from "../lib/format";
+import { fmtUsd, gnotUsdFromPools, poolTvlUsd, tokenUsd, ugnotToUsd } from "../lib/usd";
 import { isIncentivized } from "../lib/hub";
 import Spark from "./Spark";
 import { PairAvatars } from "./TokenAvatar";
 
 export default function Markets() {
   const { pools, tradePool, addLp, setTab, d, live, wallet } = useDex();
+  const gnotUsd = gnotUsdFromPools(pools);
   if (!pools.length) {
     return (
       <div className="card empty-card">
@@ -38,10 +40,13 @@ export default function Markets() {
               {isIncentivized(live, p.id) ? <span className="pill live">{d.incentivized}</span> : null}
             </div>
             <div className="px">
-              {fmtInt(p.quote1gnot)} <span className="muted">{p.symbol}</span>
+              {fmtUsd(tokenUsd(p, gnotUsd))}
+              <div className="muted">
+                1 {p.symbol} · {fmtInt(p.quote1gnot)} / GNOT
+              </div>
             </div>
             <div className="muted mkt-meta">
-              {fmtGnot(p.reserveU)} GNOT · {p.feeBps / 100}% · {d.feeApr} {fmtApr(lpFeeAprPct(p))}
+              {fmtUsd(poolTvlUsd(p, gnotUsd))} · {fmtGnot(p.reserveU)} GNOT · {p.feeBps / 100}% · {d.feeApr} {fmtApr(lpFeeAprPct(p))}
               {isIncentivized(live, p.id)
                 ? ` · ${d.boostTvl} ${fmtApr(gaugeBoostPct(gaugeFor(live, p.id)?.totalFunded, p.reserveU))}`
                 : ""}
@@ -101,9 +106,18 @@ export default function Markets() {
                     </div>
                     <div className="muted">{p.name}</div>
                   </td>
-                  <td className="r mono">{fmtInt(p.quote1gnot)}</td>
-                  <td className="r">{fmtGnot(p.reserveU)}</td>
-                  <td className="r">{fmtGnot(p.volumeU || "0")}</td>
+                  <td className="r mono">
+                    {fmtUsd(tokenUsd(p, gnotUsd))}
+                    <div className="muted">{fmtInt(p.quote1gnot)}</div>
+                  </td>
+                  <td className="r">
+                    {fmtUsd(poolTvlUsd(p, gnotUsd))}
+                    <div className="muted">{fmtGnot(p.reserveU)}</div>
+                  </td>
+                  <td className="r">
+                    {fmtUsd(ugnotToUsd(p.volumeU || "0", gnotUsd))}
+                    <div className="muted">{fmtGnot(p.volumeU || "0")}</div>
+                  </td>
                   <td className="r">{p.feeBps / 100}%</td>
                   <td className="r">{fmtApr(lpFeeAprPct(p))}</td>
                   <td className="r">{fmtApr(gaugeBoostPct(gaugeFor(live, p.id)?.totalFunded, p.reserveU))}</td>

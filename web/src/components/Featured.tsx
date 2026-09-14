@@ -1,10 +1,12 @@
 import { useDex } from "../context";
 import { fmtApr, lpFeeAprPct } from "../lib/amm";
 import { fmtGnot, fmtInt } from "../lib/format";
+import { fmtUsd, gnotUsdFromPools, poolTvlUsd, tokenUsd, ugnotToUsd } from "../lib/usd";
 import { PairAvatars } from "./TokenAvatar";
 
 export default function Featured() {
-  const { featured, tradePool, d } = useDex();
+  const { featured, tradePool, d, pools } = useDex();
+  const gnotUsd = gnotUsdFromPools(pools);
   if (!featured) return null;
   return (
     <div className="featured">
@@ -14,19 +16,22 @@ export default function Featured() {
           {featured.symbol} / GNOT
         </b>
         <div className="muted">
-          {featured.name} · TVL {fmtGnot(featured.reserveU)} GNOT
+          {featured.name} · TVL {fmtUsd(poolTvlUsd(featured, gnotUsd))} · {fmtGnot(featured.reserveU)} GNOT
         </div>
       </div>
       <div className="feat-stats">
         <div>
           <span>1 GNOT</span>
           <b>
-            {fmtInt(featured.quote1gnot)} {featured.symbol}
+            {fmtUsd(tokenUsd(featured, gnotUsd))}
+            <div className="muted">
+              {fmtInt(featured.quote1gnot)} {featured.symbol}
+            </div>
           </b>
         </div>
         <div>
           <span>{d.volume}</span>
-          <b>{fmtGnot(featured.volumeU || "0")}</b>
+          <b>{fmtUsd(ugnotToUsd(featured.volumeU || "0", gnotUsd))}</b>
         </div>
         <div>
           <span>{d.feeApr}</span>

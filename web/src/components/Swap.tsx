@@ -4,6 +4,7 @@ import { errText } from "../i18n";
 import { exactOutPlan, mulDiv, quoteLocal } from "../lib/amm";
 import { api } from "../lib/api";
 import { UGNOT, fmtGnot, fmtInt, parseUgnot, tokenPkgFromKey, toUgnot } from "../lib/format";
+import { fmtUsd, gnotUsdFromPools, tokenUsd, ugnotToUsd } from "../lib/usd";
 import type { ChainToken } from "../types";
 import TokenAvatar from "./TokenAvatar";
 import TokenPicker from "./TokenPicker";
@@ -20,6 +21,7 @@ type PickSide = "in" | "out" | null;
 
 export default function Swap() {
   const { live, pool, pools, setPoolId, setTab, wallet, walletAddr, busy, runTx, call, deadline, toast, d, netId } = useDex();
+  const gnotUsd = gnotUsdFromPools(pools);
   const [tokenIn, setTokenIn] = useState("ugnot");
   const [amountIn, setAmountIn] = useState("");
   const [amountOut, setAmountOut] = useState("");
@@ -318,6 +320,7 @@ export default function Swap() {
             </div>
             <div className="swap-bal">
               {d.balance} {tokenIn === "ugnot" ? fmtGnot(quote?.bal || 0n) : fmtInt(quote?.bal || 0n)} {inSym}
+              {tokenIn === "ugnot" ? ` · ${fmtUsd(ugnotToUsd(quote?.bal || 0n, gnotUsd))}` : pool ? ` · ${fmtUsd(tokenUsd(pool, gnotUsd) != null && quote ? Number(quote.bal) / 1e6 * (tokenUsd(pool, gnotUsd) as number) : null)}` : ""}
             </div>
           </div>
 

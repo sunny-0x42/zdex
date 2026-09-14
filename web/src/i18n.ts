@@ -213,6 +213,7 @@ export const copy = {
   chartFeesHint: "volume × pool fee tier. Not claimed protocol skim. Estimate only.",
   chartTvl: "TVL (GNOT)",
   est: "(est.)",
+  usdPegHint: "USD is marked from the GNOT/USDC or GNOT/USDT pool on this net. Local demo tokens are not mainnet dollars.",
   statsSub: "Live totals from the protocol.",
   tvl: "TVL",
   protocol: "Protocol",
